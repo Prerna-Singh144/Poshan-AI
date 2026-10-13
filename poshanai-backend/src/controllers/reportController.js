@@ -2,7 +2,7 @@ import { unlink } from 'node:fs/promises';
 import path from 'node:path';
 import Report from '../models/Report.js';
 import { removeUploadedFile, uploadDirectory } from '../middleware/uploadMiddleware.js';
-import { enqueueReportOcr } from '../services/ocrQueue.js';
+import { enqueueReportOcr, processReportOcr } from '../jobs/ocrQueue.js';
 import logger from '../utils/logger.js';
 
 function httpError(statusCode, code, message) {
@@ -42,29 +42,25 @@ export const upload = asyncHandler(async (req, res) => {
       fileType: req.file.mimetype,
       ocrStatus: 'pending',
     });
-    await enqueueReportOcr(report._id);
   } catch (error) {
-    let databaseCleanupFailed = false;
-    if (report) {
-      try {
-        await Report.deleteOne({ _id: report._id, userId: req.user._id });
-      } catch {
-        databaseCleanupFailed = true;
-        logger.error('A report record could not be cleaned up after its OCR job failed to queue.');
-      }
-    }
     try {
       await removeUploadedFile(req.file.path);
     } catch {
-      throw httpError(500, 'UPLOAD_CLEANUP_FAILED', 'The report could not be safely cleaned up after upload failed.');
-    }
-    if (databaseCleanupFailed) {
-      throw httpError(500, 'REPORT_CLEANUP_FAILED', 'The report could not be safely cleaned up after upload failed.');
+      throw httpError(500, 'UPLOAD_CLEANUP_FAILED', 'The uploaded file could not be safely cleaned up.');
     }
     throw error;
   }
 
-  return res.status(202).json({ success: true, data: { report: publicReport(report) } });
+  try {
+    await enqueueReportOcr(report._id);
+    return res.status(202).json({ success: true, data: { report: publicReport(report) } });
+  } catch {
+    logger.warn('Redis OCR queue is unavailable; processing the report synchronously.');
+  }
+
+  report = await processReportOcr(report._id);
+  if (!report) throw httpError(500, 'REPORT_PROCESSING_FAILED', 'The uploaded report could not be processed.');
+  return res.status(201).json({ success: true, data: { report: publicReport(report) } });
 });
 
 export const list = asyncHandler(async (req, res) => {

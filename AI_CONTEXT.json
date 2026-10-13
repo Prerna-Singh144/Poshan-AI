@@ -140,7 +140,7 @@
       "Frontend API client modules and Redux slices for users, reports, and meal plans.",
       "Indexed Report model and authenticated report upload/list/get/delete endpoints with ownership checks.",
       "UUID-named, signature-checked PDF/JPEG/PNG uploads with a 10 MB limit.",
-      "Tesseract.js OCR and a Redis-backed BullMQ worker for PDF and image reports.",
+      "Tesseract.js OCR with an optional Redis-backed BullMQ worker and synchronous fallback for PDF and image reports.",
       "Sample OCR parser/model tests and Postman instructions."
     ],
     "pending": [
@@ -154,10 +154,6 @@
     {
       "issue": "Frontend full lint currently reports errors in poshanai-frontend/src/hooks/useThrottle.js under react-hooks/refs and a warning in useCachedFetch.js.",
       "status": "Existing issue observed during repository validation; unrelated to AI_CONTEXT.json."
-    },
-    {
-      "issue": "Report OCR jobs require Redis. The development backend starts without Redis but report uploads fail explicitly with OCR_QUEUE_UNAVAILABLE.",
-      "status": "Provide REDIS_URL and ensure Redis is running for upload/OCR processing."
     }
   ],
   "environment_variables": {
@@ -172,7 +168,7 @@
       "JWT_REFRESH_EXPIRY": "Refresh token expiry; default 7d.",
       "CLIENT_URL": "Allowed frontend origin; falls back to CLIENT_ORIGIN and then http://localhost:5173.",
       "GEMINI_API_KEY": "Optional/planned AI integration credential; keep secret and server-side.",
-      "REDIS_URL": "Optional for backend startup, required to enqueue and process report OCR jobs; default Compose configuration points to its Redis service."
+      "REDIS_URL": "Optional. When configured and available, report OCR is queued; otherwise uploads run OCR synchronously. Default Compose configuration points to its Redis service."
     },
     "frontend_env": {
       "VITE_API_URL": "Optional API base URL; frontend Axios client defaults to /api.",
@@ -474,7 +470,7 @@
     ],
     "direct_local": [
       "Ensure MongoDB is running and MONGODB_URI points to it.",
-      "Ensure Redis is running and REDIS_URL points to it for report upload/OCR jobs.",
+      "Redis and REDIS_URL are optional; without an available Redis service, report uploads process OCR synchronously.",
       "Install dependencies in the root, poshanai-backend, and poshanai-frontend as needed.",
       "Run npm run dev from the repository root to start the API and web development servers."
     ],
