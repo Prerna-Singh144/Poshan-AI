@@ -1,0 +1,510 @@
+{
+  "meta": {
+    "file": "AI_CONTEXT.json",
+    "version": "1.0.0",
+    "project": "PoshanAI",
+    "purpose": "Repository-grounded project context for contributors and AI coding assistants.",
+    "usage_instruction": "Read this file before making project changes. Distinguish implemented behavior from planned specifications. Values marked proposed or unknown require confirmation before being treated as authoritative. Never add real secrets or credentials to this file."
+  },
+  "project": {
+    "name": "PoshanAI",
+    "tagline": "Nutrition awareness and meal-planning for everyday Indian food.",
+    "problem": "People need nutrition information and meal suggestions that are understandable, practical, and relevant to familiar Indian foods.",
+    "solution": "A web application intended to provide nutrition awareness, report-based insights, and personalized meal planning. The existing repository currently contains an Express API foundation and a responsive React frontend; several product features remain planned.",
+    "core_innovation": "Proposed: combine OCR of nutrition reports with Indian food context and personalized meal suggestions. The repository README identifies OCR, IFCT retrieval, and Gemini meal-plan generation as intended capabilities, not completed capabilities.",
+    "target_users": [
+      "People seeking accessible nutrition awareness",
+      "People who want meal suggestions based on familiar Indian foods"
+    ],
+    "phase_plan": [
+      {
+        "phase": "Foundation",
+        "status": "Partially implemented",
+        "scope": "Monorepo, frontend shell, Express API, MongoDB connection, authentication foundation, and local development setup."
+      },
+      {
+        "phase": "User data and reports",
+        "status": "Planned",
+        "scope": "User profile, report upload/storage, OCR processing, and extracted nutrition data."
+      },
+      {
+        "phase": "Nutrition suggestions",
+        "status": "Planned",
+        "scope": "Indian food context, IFCT retrieval, and personalized meal plans."
+      },
+      {
+        "phase": "Hardening and deployment",
+        "status": "Partially implemented",
+        "scope": "Tests, production configuration, observability, and deployment readiness."
+      }
+    ],
+    "source_note": "This file was reconstructed from files in the repository because the previously referenced master prompt was not available in session history."
+  },
+  "tech_stack": {
+    "frontend": {
+      "framework": "React 18",
+      "bundler": "Vite 6",
+      "language": "JavaScript with JSX and ES modules",
+      "routing": "React Router 6",
+      "state": "Redux Toolkit and React context",
+      "styling": "Tailwind CSS and project CSS"
+    },
+    "backend": {
+      "runtime": "Node.js",
+      "framework": "Express 4",
+      "language": "JavaScript with ES modules",
+      "database": "MongoDB with Mongoose 8",
+      "authentication": "JWT access tokens and HTTP-only refresh-token cookie",
+      "validation": "Joi"
+    },
+    "ai_layer": {
+      "status": "Reserved extension point; no active Python AI service is implemented.",
+      "planned_capabilities": [
+        "OCR",
+        "IFCT retrieval-augmented generation",
+        "Pose functionality (future/optional)",
+        "Gemini-powered meal-plan generation (planned)"
+      ],
+      "note": "Keep model credentials server-side and validate model output before using or displaying it."
+    },
+    "devops": {
+      "containers": "Docker and Docker Compose",
+      "reverse_proxy": "Nginx",
+      "services_in_compose": [
+        "MongoDB",
+        "Redis",
+        "Express API",
+        "Frontend web container"
+      ],
+      "ci_cd": "Not confirmed by repository documentation."
+    }
+  },
+  "brand_assets": {
+    "logo": {
+      "path": "poshanai-frontend/src/assets/logo.svg",
+      "status": "Present"
+    },
+    "colors": {
+      "landing_page_palette_from_stylesheet": {
+        "forest": "#244b36",
+        "deep_forest": "#173a2c",
+        "moss": "#728f5b",
+        "sage": "#e8eddf",
+        "paper": "#f8f7f1",
+        "ink": "#27362d"
+      },
+      "note": "These are current landing-page CSS values, not a separately approved brand standard."
+    },
+    "typography": {
+      "body": "Inter with system sans-serif fallbacks",
+      "display": "Georgia with Times New Roman and serif fallbacks",
+      "source": "poshanai-frontend/src/styles.css"
+    }
+  },
+  "folder_structure": {
+    "root": {
+      "poshanai-frontend/": "React/Vite application.",
+      "poshanai-backend/": "Express API and MongoDB integration.",
+      "ai-service/": "Reserved OCR, RAG, and pose extension directories; no active Python service.",
+      "nginx/": "Nginx configuration.",
+      "docker-compose.yml": "Local container orchestration.",
+      "docker-compose.prod.yml": "Production-oriented container orchestration.",
+      "AI_CONTEXT.json": "Repository-grounded project context."
+    },
+    "frontend": {
+      "src/api/": "Axios API clients.",
+      "src/components/": "Reusable React components.",
+      "src/context/": "React contexts including authentication.",
+      "src/hooks/": "Custom hooks.",
+      "src/pages/": "Route-level pages.",
+      "src/routes/": "Route guards.",
+      "src/store/": "Redux store and slices.",
+      "src/styles.css": "Global and landing page styles."
+    },
+    "backend": {
+      "src/config/": "Environment and database configuration.",
+      "src/controllers/": "HTTP request handlers.",
+      "src/middleware/": "Authentication, validation/error, and request middleware.",
+      "src/models/": "Mongoose models.",
+      "src/routes/": "Express route definitions.",
+      "src/services/": "Business logic and integrations.",
+      "src/utils/": "Shared backend utilities."
+    }
+  },
+  "current_project_status": {
+    "done": [
+      "React/Vite frontend shell, responsive landing page, and authentication-related screens.",
+      "Express API startup, MongoDB connection, health endpoint, and error handling.",
+      "Helmet, restricted credentialed CORS, JSON body-size limit, Mongo operator sanitization, and API rate limiting.",
+      "User model and register/login/refresh/logout routes with access-token and refresh-cookie handling.",
+      "Frontend API client modules and Redux slices for users, reports, and meal plans.",
+      "Indexed Report model and authenticated report upload/list/get/delete endpoints with ownership checks.",
+      "UUID-named, signature-checked PDF/JPEG/PNG uploads with a 10 MB limit.",
+      "Tesseract.js OCR and a Redis-backed BullMQ worker for PDF and image reports.",
+      "Sample OCR parser/model tests and Postman instructions."
+    ],
+    "pending": [
+      "User profile and meal-plan data endpoints are currently placeholders returning NOT_IMPLEMENTED.",
+      "AI-service implementation, IFCT integration, and meal-plan generation.",
+      "Automated integration tests against a running Redis instance and resolution of existing frontend hook lint errors."
+    ],
+    "source_note": "Status is inferred from the checked-in source. Re-check implementation before relying on this section."
+  },
+  "critical_errors": [
+    {
+      "issue": "Frontend full lint currently reports errors in poshanai-frontend/src/hooks/useThrottle.js under react-hooks/refs and a warning in useCachedFetch.js.",
+      "status": "Existing issue observed during repository validation; unrelated to AI_CONTEXT.json."
+    },
+    {
+      "issue": "Report OCR jobs require Redis. The development backend starts without Redis but report uploads fail explicitly with OCR_QUEUE_UNAVAILABLE.",
+      "status": "Provide REDIS_URL and ensure Redis is running for upload/OCR processing."
+    }
+  ],
+  "environment_variables": {
+    "backend_env": {
+      "PORT": "Backend port; backend config defaults to 5000. Docker Compose currently maps host/container port 4000 and must be reconciled before using that container setup.",
+      "NODE_ENV": "development or production.",
+      "MONGODB_URI": "MongoDB connection string; required.",
+      "JWT_SECRET": "Optional shared JWT secret fallback; do not store the real value here.",
+      "JWT_ACCESS_SECRET": "Optional access-token signing secret; falls back to JWT_SECRET.",
+      "JWT_REFRESH_SECRET": "Optional refresh-token signing secret; falls back to JWT_SECRET.",
+      "JWT_ACCESS_EXPIRY": "Access token expiry; default 15m.",
+      "JWT_REFRESH_EXPIRY": "Refresh token expiry; default 7d.",
+      "CLIENT_URL": "Allowed frontend origin; falls back to CLIENT_ORIGIN and then http://localhost:5173.",
+      "GEMINI_API_KEY": "Optional/planned AI integration credential; keep secret and server-side.",
+      "REDIS_URL": "Optional for backend startup, required to enqueue and process report OCR jobs; default Compose configuration points to its Redis service."
+    },
+    "frontend_env": {
+      "VITE_API_URL": "Optional API base URL; frontend Axios client defaults to /api.",
+      "VITE_*_SECRET": "Never expose secrets through Vite environment variables because they are bundled into browser code."
+    }
+  },
+  "atlas_credentials": {
+    "status": "No verified MongoDB Atlas connection string was found in tracked project documentation.",
+    "connection_string_template": "mongodb+srv://<username>:<password>@<cluster-host>/<database>?retryWrites=true&w=majority",
+    "local_connection_string": "mongodb://127.0.0.1:27017/poshanai",
+    "docker_connection_string": "mongodb://mongo:27017/poshanai",
+    "instructions": [
+      "Set MONGODB_URI in an untracked local .env or deployment secret store.",
+      "Never put actual usernames, passwords, tokens, or complete credential-bearing connection strings in this file or commit them."
+    ]
+  },
+  "api_contract": {
+    "base_path": "/api",
+    "response_envelopes": {
+      "success": "{ success: true, data: ... }",
+      "error": "{ success: false, error: { code, message } }"
+    },
+    "implemented": [
+      {
+        "method": "GET",
+        "path": "/health",
+        "auth": "No",
+        "status": "Implemented outside /api."
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/register",
+        "auth": "No",
+        "body": {
+          "name": "string, 2-80 characters",
+          "email": "valid email",
+          "password": "string, 8-128 characters"
+        },
+        "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "auth": "No",
+        "body": {
+          "email": "valid email",
+          "password": "string"
+        },
+        "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/refresh",
+        "auth": "Refresh-token cookie",
+        "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/logout",
+        "auth": "Refresh-token cookie",
+        "status": "Implemented."
+      }
+    ],
+    "frontend_expected_but_backend_placeholder": [
+      {
+        "method": "GET",
+        "path": "/api/users/me",
+        "auth": "Access token",
+        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/users/me",
+        "auth": "Access token",
+        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+      },
+      {
+        "method": "GET",
+        "path": "/api/reports",
+        "auth": "Access token",
+        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+      },
+      {
+        "method": "POST",
+        "path": "/api/reports/upload",
+        "auth": "Access token",
+        "content_type": "multipart/form-data",
+        "file_field": "file",
+        "status": "Implemented; POST /api/reports is also supported for frontend compatibility."
+      },
+      {
+        "method": "GET",
+        "path": "/api/reports",
+        "auth": "Access token",
+        "status": "Implemented; returns only the authenticated user's reports."
+      },
+      {
+        "method": "GET",
+        "path": "/api/reports/{id}",
+        "auth": "Access token",
+        "status": "Implemented; requires ownership and returns OCR text."
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/reports/{id}",
+        "auth": "Access token",
+        "status": "Implemented; requires ownership and deletes the stored file."
+      },
+      {
+        "method": "GET",
+        "path": "/api/meal-plans",
+        "auth": "Expected to be authenticated; backend currently returns NOT_IMPLEMENTED.",
+        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+      },
+      {
+        "method": "GET",
+        "path": "/api/meal-plans/{id}",
+        "auth": "Expected to be authenticated; backend currently returns NOT_IMPLEMENTED.",
+        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+      },
+      {
+        "method": "POST",
+        "path": "/api/meal-plans",
+        "auth": "Expected to be authenticated; backend currently returns NOT_IMPLEMENTED.",
+        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+      }
+    ],
+    "routing_note": "Current app mounts placeholder routes at /api/mealplans without a hyphen, while the frontend client expects /api/meal-plans. Reconcile paths when implementing meal-plan routes."
+  },
+  "database_schema": {
+    "User": {
+      "status": "Implemented in poshanai-backend/src/models/User.js.",
+      "collection": "users",
+      "fields": {
+        "name": "String, required, trimmed, 2-80 characters.",
+        "email": "String, required, unique, lowercase, trimmed, indexed.",
+        "passwordHash": "String, required, excluded from normal queries.",
+        "role": "String enum user/admin, defaults to user.",
+        "refreshTokenHash": "String or null, excluded from normal queries."
+      },
+      "timestamps": true,
+      "versionKey": false
+    },
+    "Report": {
+      "status": "Implemented in poshanai-backend/src/models/Report.js.",
+      "collection": "reports",
+      "fields": {
+        "userId": {
+          "type": "ObjectId",
+          "ref": "User",
+          "required": true,
+          "index": true
+        },
+        "fileUrl": {
+          "type": "String",
+          "required": true,
+          "description": "Server-side storage path or storage URL; do not expose filesystem paths unless intended."
+        },
+        "fileType": {
+          "type": "String",
+          "enum": [
+            "application/pdf",
+            "image/jpeg",
+            "image/png"
+          ],
+          "required": true
+        },
+        "ocrStatus": {
+          "type": "String",
+          "enum": [
+            "pending",
+            "processing",
+            "completed",
+            "failed"
+          ],
+          "default": "pending"
+        },
+        "rawOcrText": {
+          "type": "String",
+          "default": ""
+        },
+        "extractedValues": {
+          "type": "Array of objects",
+          "item_shape": {
+            "nutrient": "Vitamin D, Vitamin B12, Iron, Calcium, or Hemoglobin",
+            "value": "Number",
+            "unit": "String or null",
+            "referenceRange": "String or null, extracted from report text",
+            "flag": "normal, low, high, or unknown; based on report-provided range only"
+          }
+        },
+        "uploadedAt": {
+          "type": "Date",
+          "default": "now"
+        },
+        "processedAt": {
+          "type": "Date",
+          "default": null
+        }
+      },
+      "indexes": [
+        {
+          "fields": {
+            "userId": 1
+          }
+        }
+      ],
+      "additional_schema_options": "Schema uses versionKey false and explicit uploadedAt/processedAt fields."
+    },
+    "MealPlan": {
+      "status": "Planned; no backend model implemented.",
+      "collection": "mealplans (Mongoose default naming must be confirmed)",
+      "proposed_fields": {
+        "userId": "ObjectId reference to User; required.",
+        "title": "String; generated or user-facing plan title.",
+        "meals": "Array; exact item shape not confirmed.",
+        "preferences": "Object; exact schema not confirmed.",
+        "createdAt": "Date."
+      },
+      "note": "Treat this as a placeholder, not an approved schema."
+    },
+    "DeficiencyLog": {
+      "status": "Planned; no backend model implemented.",
+      "proposed_fields": {
+        "userId": "ObjectId reference to User; required.",
+        "reportId": "Optional ObjectId reference to Report.",
+        "nutrient": "String; exact allowed values not confirmed.",
+        "value": "Number; units and reference ranges not confirmed.",
+        "recordedAt": "Date."
+      },
+      "note": "Do not use for diagnosis. Confirm data definitions and clinical review requirements before implementation."
+    }
+  },
+  "coding_conventions": {
+    "backend": [
+      "Use JavaScript ES modules and .js file extensions in imports.",
+      "Use two-space indentation, semicolons, and single-quoted strings, matching existing source.",
+      "Keep route registration in routes, request orchestration in controllers, persistence shape in models, and reusable business logic in services.",
+      "Validate external input with Joi and return the repository's standard success/error JSON envelope.",
+      "Use async error forwarding compatible with Express 4."
+    ],
+    "frontend": [
+      "Use React function components and JSX.",
+      "Keep API calls in src/api and use the shared Axios client."
+    ],
+    "general": [
+      "Prefer small, surgical changes and preserve established naming and formatting.",
+      "Do not claim placeholder endpoints or AI capabilities are implemented."
+    ]
+  },
+  "security_rules": [
+    "Never commit .env files, API keys, passwords, access tokens, refresh tokens, or credential-bearing connection strings.",
+    "Keep server credentials out of frontend VITE_* variables and browser bundles.",
+    "Protect private API routes with the existing JWT access-token middleware.",
+    "Determine resource ownership from the authenticated user identity, never a client-supplied owner ID.",
+    "Validate request data with Joi; reject unexpected or malformed inputs.",
+    "For file uploads, enforce file size and allowed content types; do not trust the client filename or MIME type alone.",
+    "Generate server-side random filenames and prevent path traversal; store uploads outside publicly served static roots.",
+    "Do not execute, render, or publicly serve uploaded content by default.",
+    "Clean up stored files when a database operation fails or when an owned resource is deleted, without deleting files outside the configured upload directory.",
+    "Use Helmet, restricted CORS, request-size limits, Mongo operator sanitization, and rate limits already present in the backend.",
+    "Do not log secrets, raw authentication tokens, or sensitive health information.",
+    "Treat OCR and generative AI output as untrusted input; validate it and do not present it as medical diagnosis.",
+    "Return non-revealing production errors; never disclose stack traces, database details, or secret configuration."
+  ],
+  "team_roles": [
+    {
+      "role": "Member 1",
+      "area": "Frontend"
+    },
+    {
+      "role": "Member 2",
+      "area": "Backend"
+    },
+    {
+      "role": "Member 3",
+      "area": "AI service"
+    },
+    {
+      "role": "Member 4",
+      "area": "DevOps"
+    }
+  ],
+  "git_workflow": {
+    "branching": "Use focused feature branches; examples currently present include feature/frontend-ui and feature/backend-api.",
+    "commit_style": "Recent repository commits primarily use Conventional Commit prefixes such as feat:, chore:, and perf:.",
+    "pull_requests": "Use pull requests for review when available.",
+    "safety": [
+      "Do not amend existing commits unless explicitly requested.",
+      "Do not force-push unless explicitly requested.",
+      "Inspect git status before staging and preserve unrelated working-tree changes."
+    ]
+  },
+  "how_to_start_project": {
+    "recommended": [
+      "Create a local .env from .env.example and configure valid non-production secrets.",
+      "Run docker compose up --build from the repository root.",
+      "Open the frontend at http://localhost:8080 when using the Compose setup."
+    ],
+    "direct_local": [
+      "Ensure MongoDB is running and MONGODB_URI points to it.",
+      "Ensure Redis is running and REDIS_URL points to it for report upload/OCR jobs.",
+      "Install dependencies in the root, poshanai-backend, and poshanai-frontend as needed.",
+      "Run npm run dev from the repository root to start the API and web development servers."
+    ],
+    "health_check": "The backend exposes GET /health. Confirm the actual mapped port using docker-compose.yml and backend configuration; current files have a port configuration mismatch that should be reconciled."
+  },
+  "ai_prompt_guidelines": [
+    "Read this context and the relevant source files before changing code.",
+    "Confirm whether schema and behavior are implemented, proposed, or unknown.",
+    "Use repository patterns and make focused, testable changes.",
+    "Do not invent credentials, secrets, clinical rules, nutrition thresholds, or unprovided schema details.",
+    "Validate all model/OCR output before persistence or display.",
+    "Keep product language educational and do not claim that PoshanAI diagnoses or replaces qualified healthcare advice.",
+    "Report tests run and any pre-existing failures accurately."
+  ],
+  "immediate_next_tasks": [
+    "Implement user profile endpoints and meal-plan endpoints expected by the frontend.",
+    "Resolve the frontend lint errors in useThrottle.js and confirm useCachedFetch.js warning behavior.",
+    "Reconcile backend port defaults with Docker Compose and README instructions.",
+    "Define and test schemas for MealPlan and DeficiencyLog before implementing their endpoints.",
+    "Update README project status as features become functional."
+  ],
+  "do_not": [
+    "Do not commit or reveal real secrets, API keys, JWT secrets, passwords, or Atlas credentials.",
+    "Do not trust req.body.userId or any other client-provided identity to establish ownership.",
+    "Do not accept arbitrary file types or unbounded uploads.",
+    "Do not use user-controlled filenames as filesystem paths.",
+    "Do not expose uploads through an unrestricted static file server.",
+    "Do not silently swallow errors or return success-shaped fallback data.",
+    "Do not claim planned AI, OCR, IFCT, or meal-planning functionality is operational before verifying it.",
+    "Do not provide medical diagnoses or present generated nutrition suggestions as professional medical advice.",
+    "Do not force-push, amend commits, or discard unrelated user work without explicit authorization."
+  ]
+}
