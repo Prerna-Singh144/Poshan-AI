@@ -26,9 +26,9 @@ export const fetchMealPlanById = createAsyncThunk(
 
 export const generateMealPlan = createAsyncThunk(
   'mealPlans/generate',
-  async (preferences, { rejectWithValue }) => {
+  async (request, { rejectWithValue }) => {
     try {
-      return await mealPlanApi.generateMealPlan(preferences);
+      return await mealPlanApi.generateMealPlan(request);
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }

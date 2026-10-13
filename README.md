@@ -24,7 +24,7 @@ PoshanAI/
 
 ## Current implementation
 
-The frontend is a responsive landing page. The Express API connects to MongoDB and includes health endpoints, Helmet, restricted CORS, request-size limits, Mongo operator sanitization, API rate limiting, JWT authentication, and report upload/ownership endpoints. Report OCR uses Tesseract.js, with an optional Redis-backed queue and synchronous fallback; IFCT retrieval, Gemini meal-plan generation, and other application data routes remain planned. The `ai-service` directories are extension points only.
+The frontend is a responsive landing page. The Express API connects to MongoDB and includes health endpoints, Helmet, restricted CORS, request-size limits, Mongo operator sanitization, API rate limiting, JWT authentication, and ownership-checked report and meal-plan endpoints. Report OCR uses Tesseract.js, with an optional Redis-backed queue and synchronous fallback. Meal plans use a replaceable IFCT RAG stub and an OpenAI-compatible OmniRoute gateway configured with `OMNIROUTE_URL`, `OMNIROUTE_MODEL`, and optional `OMNIROUTE_API_KEY`. Nutrient amounts shown in a plan are calculated from the selected IFCT records and serving weights; the current RAG catalog is a development stub, not a complete food database. The `ai-service` directories remain extension points.
 
 PoshanAI is intended for nutrition awareness and food suggestions. It must not diagnose or replace advice from a qualified healthcare professional.
 
@@ -48,3 +48,16 @@ The upload is also accepted at `POST /api/reports` for compatibility with the ex
 5. Send `DELETE {{baseUrl}}/api/reports/{{reportId}}` to verify deletion of the report and its stored file.
 
 Redis is optional. When Redis is available (`REDIS_URL`), report OCR is queued and the upload returns immediately with `ocrStatus: "pending"`. If Redis is not configured or unavailable, the API logs a warning and runs OCR during the upload request, returning the completed report and extracted values. Docker Compose configures Redis and persists uploads in a local folder or named volume. The backend downloads Tesseract's English model when it first processes a report, so network access is needed for first use.
+
+## Meal-plan API
+
+Meal-plan endpoints require a bearer access token. `POST /api/mealplans/generate` accepts a completed, owned `reportId` and optional `preferences` (`dietType`, `allergies`, `region`, and `activityLevel`). The list, detail, and status endpoints return only plans owned by the authenticated user:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/mealplans/generate` | Generate and save a seven-day meal plan from an owned, OCR-complete report. |
+| `GET` | `/api/mealplans` | List the authenticated user's plans. |
+| `GET` | `/api/mealplans/:id` | Get one owned plan. |
+| `PATCH` | `/api/mealplans/:id/status` | Set `status` to `active` or `completed`. |
+
+Every plan response includes the disclaimer: “PoshanAI provides nutrition awareness and suggestions. It does not diagnose, treat, or replace advice from a qualified healthcare professional.” If OmniRoute is unavailable or returns an invalid plan, generation fails with a structured API error rather than returning a fabricated plan. The initial replaceable RAG stub uses a small selection of IFCT 2017 data published by ICMR-NIN ([official tables](https://www.nin.res.in/ebooks/IFCT2017.pdf)); unavailable B12 values remain `null`. Configure the model and any gateway credential only in the backend environment.
