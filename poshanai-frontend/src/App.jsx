@@ -9,16 +9,17 @@ import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import MealPlanView from './pages/MealPlanView.jsx';
 import NotFound from './pages/NotFound.jsx';
+import Landing from './pages/Landing.jsx';
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/upload" element={<UploadReport />} />
