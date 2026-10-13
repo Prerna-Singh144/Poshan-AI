@@ -6,6 +6,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -33,6 +34,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/reports', reportRoutes);
 
 const placeholderRouter = express.Router();
 placeholderRouter.use((_req, res) => {
@@ -42,7 +44,6 @@ placeholderRouter.use((_req, res) => {
   });
 });
 app.use('/api/users', placeholderRouter);
-app.use('/api/reports', placeholderRouter);
 app.use('/api/mealplans', placeholderRouter);
 
 app.use(notFoundHandler);

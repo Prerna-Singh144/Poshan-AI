@@ -17,6 +17,7 @@ export const env = {
   port: Number(process.env.PORT ?? 5000),
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
+  redisUrl: process.env.REDIS_URL ?? null,
   jwtAccessSecret: accessSecret,
   jwtRefreshSecret: refreshSecret,
   jwtAccessExpiry: process.env.JWT_ACCESS_EXPIRY ?? '15m',
