@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test": "node --test"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.11",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^6.3.13",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -19,6 +22,9 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.9.5",
+    "multer": "^2.4.0",
+    "pdfjs-dist": "^6.4.299",
+    "tesseract.js": "^7.0.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {

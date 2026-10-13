@@ -15,7 +15,7 @@ export function verifyToken(req, _res, next) {
   try {
     const payload = jwt.verify(token, env.jwtAccessSecret);
     if (payload.type !== 'access' || !payload.sub) return next(authError('Invalid access token.'));
-    req.user = { id: payload.sub, role: payload.role };
+    req.user = { id: payload.sub, _id: payload.sub, role: payload.role };
     return next();
   } catch {
     return next(authError('Invalid or expired access token.'));

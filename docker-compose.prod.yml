@@ -22,6 +22,7 @@ services:
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN in the production environment}
       MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in the production environment}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    volumes: ["report_uploads:/app/uploads"]
     depends_on:
       mongo: { condition: service_healthy }
       redis: { condition: service_started }
@@ -35,3 +36,4 @@ services:
 volumes:
   mongo_data:
   redis_data:
+  report_uploads:
