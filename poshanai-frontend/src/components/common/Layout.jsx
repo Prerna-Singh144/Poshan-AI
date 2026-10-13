@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from './Toast.jsx';
 
 const links = [
-  { to: '/', label: 'Dashboard' },
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/profile', label: 'Profile' },
   { to: '/upload', label: 'Upload report' },
 ];
@@ -24,7 +24,7 @@ function Navbar({ dark, onToggleTheme, onToggleMenu }) {
           >
             ☰
           </button>
-          <Link to="/" className="text-xl font-bold text-leaf dark:text-emerald-300">
+          <Link to="/dashboard" className="text-xl font-bold text-leaf dark:text-emerald-300">
             PoshanAI
           </Link>
         </div>
