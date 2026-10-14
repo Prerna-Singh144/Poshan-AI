@@ -45,13 +45,13 @@ function createRefreshToken(user) {
 function setRefreshCookie(res, token) {
   res.cookie(env.refreshCookieName, token, {
     httpOnly: true,
-    secure: env.isProduction,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/api/auth',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   res.cookie(env.refreshCookiePresenceName, '1', {
-    secure: env.isProduction,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -61,12 +61,12 @@ function setRefreshCookie(res, token) {
 function clearRefreshCookie(res) {
   res.clearCookie(env.refreshCookieName, {
     httpOnly: true,
-    secure: env.isProduction,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/api/auth',
   });
   res.clearCookie(env.refreshCookiePresenceName, {
-    secure: env.isProduction,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
   });
@@ -116,7 +116,10 @@ export const login = asyncHandler(async (req, res) => {
 
 export const refresh = asyncHandler(async (req, res) => {
   const token = req.cookies?.[env.refreshCookieName];
-  if (!token) throw httpError(401, 'REFRESH_TOKEN_MISSING', 'Refresh token is missing.');
+  if (!token) {
+    clearRefreshCookie(res);
+    throw httpError(401, 'REFRESH_TOKEN_MISSING', 'Refresh token is missing.');
+  }
 
   let payload;
   try {

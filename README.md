@@ -24,7 +24,9 @@ PoshanAI/
 
 ## Production Compose
 
-Copy `.env.production.example` to `.env`, replace every `CHANGEME` value with unique credentials, set `CLIENT_ORIGIN` to the deployed frontend origin, and ensure the MongoDB and Redis URLs use the same passwords as their service settings. Generate separate JWT secrets of at least 32 characters. Do not commit `.env`. Start the production stack with `docker compose -f docker-compose.prod.yml up -d`.
+Copy `.env.production.example` to `.env`, replace every `CHANGEME` value with unique credentials, set `CLIENT_ORIGIN` to the deployed frontend origin, and ensure the MongoDB and Redis URLs use the same passwords as their service settings. Generate separate JWT secrets of at least 32 characters. Do not commit `.env`. Provide `nginx/certs/fullchain.pem` and `nginx/certs/privkey.pem` from Let's Encrypt before starting the production stack with `docker compose -f docker-compose.prod.yml up -d`. Renew certificates with Certbot on the host and reload nginx after renewal.
+
+For local Compose TLS, place a self-signed certificate and key at those same paths (for example, generate them with OpenSSL using `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx/certs/privkey.pem -out nginx/certs/fullchain.pem -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"`). The local web container is available at `https://localhost`; HTTP requests redirect to HTTPS. Browsers will warn until the local certificate is trusted.
 
 ## Current implementation
 

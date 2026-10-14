@@ -43,7 +43,8 @@ services:
       context: .
       dockerfile: poshanai-frontend/Dockerfile
     restart: always
-    ports: ["80:80"]
+    ports: ["80:80", "443:443"]
+    volumes: ["./nginx/certs:/etc/nginx/certs:ro"]
     depends_on: [api]
 volumes:
   mongo_data:
