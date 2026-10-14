@@ -19,6 +19,7 @@ const reportSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     fileUrl: { type: String, required: true },
+    fileSizeBytes: { type: Number, required: true, min: 0 },
     fileType: {
       type: String,
       enum: ['application/pdf', 'image/jpeg', 'image/png'],

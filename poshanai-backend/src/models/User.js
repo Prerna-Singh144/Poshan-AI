@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
     refreshTokenHash: { type: String, default: null, select: false },
+    uploadCount: { type: Number, default: 0, min: 0 },
+    uploadSizeBytes: { type: Number, default: 0, min: 0 },
+    uploadQuotaInitialized: { type: Boolean, default: false, select: false },
   },
   { timestamps: true, versionKey: false },
 );

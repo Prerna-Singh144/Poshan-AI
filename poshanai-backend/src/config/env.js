@@ -14,6 +14,16 @@ if (!accessSecret || !refreshSecret) {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const storageType = process.env.STORAGE_TYPE ?? (nodeEnv === 'production' ? 's3' : 'local');
+if (!['local', 's3'].includes(storageType)) {
+  throw new Error('STORAGE_TYPE must be either local or s3.');
+}
+if (storageType === 's3' && (!process.env.S3_BUCKET || !process.env.S3_REGION)) {
+  throw new Error('S3_BUCKET and S3_REGION are required when STORAGE_TYPE=s3.');
+}
+if (Boolean(process.env.S3_ACCESS_KEY) !== Boolean(process.env.S3_SECRET_KEY)) {
+  throw new Error('Set both S3_ACCESS_KEY and S3_SECRET_KEY, or use the AWS default credential provider.');
+}
 const placeholderSecrets = new Set(['CHANGEME', 'your_secret_here']);
 const jwtSecretIssues = [];
 for (const [name, secret] of [
@@ -38,6 +48,11 @@ export const env = {
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
   redisUrl: process.env.REDIS_URL ?? null,
+  storageType,
+  s3Bucket: process.env.S3_BUCKET ?? null,
+  s3Region: process.env.S3_REGION ?? null,
+  s3AccessKey: process.env.S3_ACCESS_KEY ?? null,
+  s3SecretKey: process.env.S3_SECRET_KEY ?? null,
   omniRouteUrl: process.env.OMNIROUTE_URL ?? 'http://localhost:20128/v1/chat/completions',
   omniRouteModel: process.env.OMNIROUTE_MODEL ?? 'gemini-2.0-flash',
   omniRouteApiKey: process.env.OMNIROUTE_API_KEY ?? null,

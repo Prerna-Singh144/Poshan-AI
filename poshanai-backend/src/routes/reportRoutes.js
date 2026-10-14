@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
-import uploadReportFile, { removeUploadedFile } from '../middleware/uploadMiddleware.js';
+import uploadReportFile, { cleanupUploadedFile } from '../middleware/uploadMiddleware.js';
 import * as reportController from '../controllers/reportController.js';
 
 const router = Router();
@@ -28,7 +28,7 @@ function validateEmptyUploadBody(req, _res, next) {
   const { error } = emptyBodySchema.validate(req.body ?? {}, { abortEarly: false });
   if (!error) return next();
 
-  removeUploadedFile(req.file?.path)
+  cleanupUploadedFile(req.file)
     .then(() => next(validationError()))
     .catch(() => {
       const cleanupError = new Error('The uploaded file could not be safely cleaned up.');

@@ -1,7 +1,6 @@
-import path from 'node:path';
 import Report from '../models/Report.js';
-import { uploadDirectory } from '../middleware/uploadMiddleware.js';
 import { extractTextFromReport } from './ocrService.js';
+import { cleanupDownloadedFile, downloadFile } from './storageService.js';
 
 export async function processReportOcr(reportId) {
   const processingStartedAt = new Date();
@@ -18,8 +17,13 @@ export async function processReportOcr(reportId) {
   );
   if (!report) return;
 
-  const filePath = path.resolve(uploadDirectory, path.basename(report.fileUrl));
-  const result = await extractTextFromReport(filePath);
+  const filePath = await downloadFile(report.fileUrl);
+  let result;
+  try {
+    result = await extractTextFromReport(filePath);
+  } finally {
+    await cleanupDownloadedFile(filePath);
+  }
   await Report.updateOne(
     { _id: report._id, ocrStatus: 'processing', processingStartedAt },
     {
