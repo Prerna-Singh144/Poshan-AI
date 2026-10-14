@@ -21,7 +21,6 @@ const maxPdfPages = 25;
 const maxPdfPagePixels = 40_000_000;
 const tesseractCachePath = fileURLToPath(new URL('../../uploads/tesseract-cache/', import.meta.url));
 let workerPromise;
-let recognitionQueue = Promise.resolve();
 
 function numericValue(rawValue) {
   const normalized = rawValue.replace(',', '.').replace(/[<>≤≥=\s]/g, '');
@@ -208,18 +207,14 @@ export async function extractTextFromReport(filePath) {
     throw error;
   }
 
-  const operation = recognitionQueue.then(async () => {
-    const rawText = await runOcr(filePath);
-    if (!rawText.trim()) {
-      const error = new Error('No readable text was found in the report.');
-      error.statusCode = 422;
-      error.code = 'OCR_NO_TEXT';
-      throw error;
-    }
-    return { rawText, extractedValues: extractValuesFromText(rawText) };
-  });
-  recognitionQueue = operation.catch(() => {});
-  return operation;
+  const rawText = await runOcr(filePath);
+  if (!rawText.trim()) {
+    const error = new Error('No readable text was found in the report.');
+    error.statusCode = 422;
+    error.code = 'OCR_NO_TEXT';
+    throw error;
+  }
+  return { rawText, extractedValues: extractValuesFromText(rawText) };
 }
 
 export async function closeOcrWorker() {

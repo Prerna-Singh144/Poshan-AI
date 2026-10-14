@@ -38,6 +38,25 @@ services:
     depends_on:
       mongo: { condition: service_healthy }
       redis: { condition: service_started }
+  ocr-worker:
+    build: ./poshanai-backend
+    command: ["npm", "run", "worker"]
+    env_file: .env
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN in the production environment}
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in the production environment}
+      REDIS_URL: ${REDIS_URL:?Set REDIS_URL in .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-15m}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-7d}
+    volumes: ["report_uploads:/app/uploads"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_started }
   web:
     build:
       context: .

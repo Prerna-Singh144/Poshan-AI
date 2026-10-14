@@ -30,6 +30,8 @@ const reportSchema = new mongoose.Schema(
       default: 'pending',
       required: true,
     },
+    ocrError: { type: String, default: null },
+    processingStartedAt: { type: Date, default: null },
     rawOcrText: { type: String, default: '' },
     extractedValues: { type: [extractedValueSchema], default: [] },
     uploadedAt: { type: Date, default: Date.now, required: true },

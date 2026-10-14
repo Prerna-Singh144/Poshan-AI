@@ -1,1 +1,1 @@
-export { closeOcrQueue, enqueueReportOcr, processReportOcr, startOcrWorker } from '../jobs/ocrQueue.js';
+export { closeOcrQueue, enqueueReportOcr } from '../jobs/ocrQueue.js';

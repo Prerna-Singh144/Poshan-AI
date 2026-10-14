@@ -24,6 +24,14 @@ services:
     depends_on:
       mongo: { condition: service_healthy }
       redis: { condition: service_started }
+  ocr-worker:
+    build: ./poshanai-backend
+    command: ["npm", "run", "worker"]
+    env_file: .env
+    volumes: ["./poshanai-backend/uploads:/app/uploads"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_started }
   web:
     build:
       context: .

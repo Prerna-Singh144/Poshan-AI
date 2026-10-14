@@ -2,7 +2,8 @@ import { unlink } from 'node:fs/promises';
 import path from 'node:path';
 import Report from '../models/Report.js';
 import { removeUploadedFile, uploadDirectory } from '../middleware/uploadMiddleware.js';
-import { enqueueReportOcr, processReportOcr } from '../jobs/ocrQueue.js';
+import { enqueueReportOcr } from '../jobs/ocrQueue.js';
+import { processReportOcr } from '../services/ocrProcessor.js';
 import logger from '../utils/logger.js';
 
 function httpError(statusCode, code, message) {
