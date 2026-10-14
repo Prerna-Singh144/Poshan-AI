@@ -9,9 +9,12 @@ import authRoutes from './routes/authRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import requestLogger from './middleware/requestLogger.js';
+import { getHealthStatus } from './services/healthService.js';
 
 const app = express();
 app.set('trust proxy', 1);
+app.use(requestLogger);
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
@@ -31,8 +34,13 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use('/api', apiLimiter);
 
-app.get('/health', (_req, res) => {
-  res.json({ success: true, data: { status: 'ok', service: 'poshanai-api' } });
+app.get('/health', async (_req, res, next) => {
+  try {
+    const health = await getHealthStatus();
+    return res.status(health.status === 'ok' ? 200 : 503).json(health);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.use('/api/auth', authRoutes);

@@ -3,6 +3,7 @@ import connectDB from './config/db.js';
 import { env } from './config/env.js';
 import logger from './utils/logger.js';
 import { closeOcrQueue } from './jobs/ocrQueue.js';
+import { closeHealthRedis } from './services/healthService.js';
 
 let server;
 let shuttingDown = false;
@@ -14,50 +15,44 @@ async function startServer() {
   });
 }
 
-async function shutdown(reason) {
+async function shutdown(reason, error) {
   if (shuttingDown) return;
   shuttingDown = true;
-  logger.error(reason);
+  logger.error(reason, error);
 
   if (server) {
     await new Promise((resolve) => server.close(resolve));
   }
 
-  await closeOcrQueue();
+  await Promise.all([closeOcrQueue(), closeHealthRedis()]);
   process.exit(1);
 }
 
-process.on('unhandledRejection', () => {
-  void shutdown('Unhandled promise rejection');
+process.on('unhandledRejection', (error) => {
+  void shutdown('Unhandled promise rejection', error);
 });
 
-process.on('uncaughtException', () => {
-  void shutdown('Uncaught exception');
+process.on('uncaughtException', (error) => {
+  void shutdown('Uncaught exception', error);
 });
+
+async function gracefulShutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  if (server) await new Promise((resolve) => server.close(resolve));
+  await Promise.all([closeOcrQueue(), closeHealthRedis()]);
+  process.exit(0);
+}
 
 process.on('SIGTERM', () => {
-  if (server) {
-    server.close(async () => {
-      await closeOcrQueue();
-      process.exit(0);
-    });
-  } else {
-    process.exit(0);
-  }
+  void gracefulShutdown();
 });
 
 process.on('SIGINT', () => {
-  if (server) {
-    server.close(async () => {
-      await Promise.all([closeOcrQueue(), closeOcrWorker()]);
-      process.exit(0);
-    });
-  } else {
-    process.exit(0);
-  }
+  void gracefulShutdown();
 });
 
-startServer().catch(() => {
-  logger.error('Backend startup failed');
+startServer().catch((error) => {
+  logger.error('Backend startup failed', error);
   process.exit(1);
 });
