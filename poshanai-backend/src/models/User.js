@@ -1,13 +1,23 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 
+const refreshTokenSchema = new mongoose.Schema(
+  {
+    hash: { type: String, required: true },
+    deviceInfo: { type: String, required: true, maxlength: 256 },
+    createdAt: { type: Date, required: true },
+    lastUsedAt: { type: Date, default: null },
+  },
+  { _id: false },
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 80 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
-    refreshTokenHash: { type: String, default: null, select: false },
+    refreshTokens: { type: [refreshTokenSchema], default: [], select: false },
     uploadCount: { type: Number, default: 0, min: 0 },
     uploadSizeBytes: { type: Number, default: 0, min: 0 },
     uploadQuotaInitialized: { type: Boolean, default: false, select: false },

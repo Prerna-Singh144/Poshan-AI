@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import Joi from 'joi';
 import { rateLimit } from 'express-rate-limit';
 import * as authController from '../controllers/authController.js';
+import { verifyToken } from '../middleware/authMiddleware.js';
 
 const router = Router();
 const authLimiterOptions = {
@@ -58,5 +59,6 @@ router.post('/register', registerLimiter, validate(registerSchema), authControll
 router.post('/login', loginLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', validate(emptySchema), authController.refresh);
 router.post('/logout', validate(emptySchema), authController.logout);
+router.post('/logout-all', verifyToken, validate(emptySchema), authController.logoutAll);
 
 export default router;

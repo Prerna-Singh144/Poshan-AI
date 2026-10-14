@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { env } from '../config/env.js';
@@ -36,10 +36,27 @@ function createAccessToken(user) {
 }
 
 function createRefreshToken(user) {
-  return jwt.sign({ type: 'refresh' }, env.jwtRefreshSecret, {
+  return jwt.sign({ type: 'refresh', jti: randomUUID() }, env.jwtRefreshSecret, {
     subject: user.id,
     expiresIn: env.jwtRefreshExpiry,
   });
+}
+
+const maxRefreshSessions = 5;
+
+function issueSession(user, deviceInfo = 'Unknown device') {
+  const refreshToken = createRefreshToken(user);
+  const now = new Date();
+  return {
+    refreshToken,
+    refreshTokenEntry: {
+      hash: hashToken(refreshToken),
+      deviceInfo: deviceInfo.slice(0, 256) || 'Unknown device',
+      createdAt: now,
+      lastUsedAt: now,
+    },
+    data: { accessToken: createAccessToken(user), user: userPayload(user) },
+  };
 }
 
 function setRefreshCookie(res, token) {
@@ -72,21 +89,18 @@ function clearRefreshCookie(res) {
   });
 }
 
-function issueSession(user, res) {
-  const refreshToken = createRefreshToken(user);
-  user.refreshTokenHash = hashToken(refreshToken);
-  setRefreshCookie(res, refreshToken);
-  return { accessToken: createAccessToken(user), user: userPayload(user) };
-}
-
-async function persistRefreshTokenHash(user) {
+async function appendRefreshToken(userId, refreshTokenEntry) {
   const result = await User.updateOne(
-    { _id: user._id },
-    { $set: { refreshTokenHash: user.refreshTokenHash } },
+    { _id: userId },
+    { $push: { refreshTokens: { $each: [refreshTokenEntry], $slice: -maxRefreshSessions } } },
   );
   if (result.matchedCount !== 1) {
     throw new Error('User session could not be updated.');
   }
+}
+
+async function invalidateRefreshTokens(userId) {
+  await User.updateOne({ _id: userId }, { $set: { refreshTokens: [] } });
 }
 
 export const register = asyncHandler(async (req, res) => {
@@ -97,10 +111,12 @@ export const register = asyncHandler(async (req, res) => {
 
   const user = new User({ name: req.body.name, email });
   await user.setPassword(req.body.password);
-  const session = issueSession(user, res);
+  const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
+  user.refreshTokens.push(issued.refreshTokenEntry);
   await user.save();
+  setRefreshCookie(res, issued.refreshToken);
 
-  return res.status(201).json({ success: true, data: session });
+  return res.status(201).json({ success: true, data: issued.data });
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -109,9 +125,10 @@ export const login = asyncHandler(async (req, res) => {
     throw httpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
   }
 
-  const session = issueSession(user, res);
-  await persistRefreshTokenHash(user);
-  return res.json({ success: true, data: session });
+  const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
+  await appendRefreshToken(user._id, issued.refreshTokenEntry);
+  setRefreshCookie(res, issued.refreshToken);
+  return res.json({ success: true, data: issued.data });
 });
 
 export const refresh = asyncHandler(async (req, res) => {
@@ -134,29 +151,54 @@ export const refresh = asyncHandler(async (req, res) => {
     throw httpError(401, 'REFRESH_TOKEN_INVALID', 'Refresh token is invalid or expired.');
   }
 
-  const user = await User.findById(payload.sub).select('+refreshTokenHash');
-  if (!user || user.refreshTokenHash !== hashToken(token)) {
+  const user = await User.findById(payload.sub).select('+refreshTokens');
+  if (!user) {
     clearRefreshCookie(res);
     throw httpError(401, 'REFRESH_TOKEN_REVOKED', 'Refresh token is invalid or expired.');
   }
 
-  const session = issueSession(user, res);
-  await persistRefreshTokenHash(user);
-  return res.json({ success: true, data: session });
+  const currentHash = hashToken(token);
+  const currentSession = user.refreshTokens.find((entry) => entry.hash === currentHash);
+  if (!currentSession) {
+    await invalidateRefreshTokens(user._id);
+    clearRefreshCookie(res);
+    throw httpError(401, 'REFRESH_TOKEN_REVOKED', 'Refresh token reuse was detected. Please sign in again.');
+  }
+
+  const issued = issueSession(user, currentSession.deviceInfo);
+  const result = await User.updateOne(
+    { _id: user._id, refreshTokens: { $elemMatch: { hash: currentHash } } },
+    {
+      $set: {
+        'refreshTokens.$.hash': issued.refreshTokenEntry.hash,
+        'refreshTokens.$.lastUsedAt': issued.refreshTokenEntry.lastUsedAt,
+      },
+    },
+  );
+  if (result.matchedCount !== 1) {
+    await invalidateRefreshTokens(user._id);
+    clearRefreshCookie(res);
+    throw httpError(401, 'REFRESH_TOKEN_REVOKED', 'Refresh token reuse was detected. Please sign in again.');
+  }
+
+  setRefreshCookie(res, issued.refreshToken);
+  return res.json({ success: true, data: issued.data });
 });
 
 export const logout = asyncHandler(async (req, res) => {
   const token = req.cookies?.[env.refreshCookieName];
   if (token) {
+    let payload;
     try {
-      const payload = jwt.verify(token, env.jwtRefreshSecret, { algorithms: ['HS256'] });
-      const user = await User.findById(payload.sub).select('+refreshTokenHash');
-      if (user?.refreshTokenHash === hashToken(token)) {
-        user.refreshTokenHash = null;
-        await persistRefreshTokenHash(user);
-      }
+      payload = jwt.verify(token, env.jwtRefreshSecret, { algorithms: ['HS256'] });
     } catch {
       // Clear invalid or expired cookies without disclosing token details.
+    }
+    if (payload?.type === 'refresh' && payload.sub) {
+      await User.updateOne(
+        { _id: payload.sub },
+        { $pull: { refreshTokens: { hash: hashToken(token) } } },
+      );
     }
   }
 
@@ -164,4 +206,16 @@ export const logout = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: { message: 'Logged out.' } });
 });
 
-export default { register, login, refresh, logout };
+export const logoutAll = asyncHandler(async (req, res) => {
+  const result = await User.updateOne(
+    { _id: req.user.id },
+    { $set: { refreshTokens: [] } },
+  );
+  if (result.matchedCount !== 1) {
+    throw httpError(404, 'USER_NOT_FOUND', 'User not found.');
+  }
+  clearRefreshCookie(res);
+  return res.json({ success: true, data: { message: 'Logged out of all devices.' } });
+});
+
+export default { register, login, refresh, logout, logoutAll };
