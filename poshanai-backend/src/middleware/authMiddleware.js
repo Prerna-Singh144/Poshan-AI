@@ -13,7 +13,7 @@ export function verifyToken(req, _res, next) {
   if (scheme?.toLowerCase() !== 'bearer' || !token) return next(authError());
 
   try {
-    const payload = jwt.verify(token, env.jwtAccessSecret);
+    const payload = jwt.verify(token, env.jwtAccessSecret, { algorithms: ['HS256'] });
     if (payload.type !== 'access' || !payload.sub) return next(authError('Invalid access token.'));
     req.user = { id: payload.sub, _id: payload.sub, role: payload.role };
     return next();

@@ -123,7 +123,7 @@ export const refresh = asyncHandler(async (req, res) => {
 
   let payload;
   try {
-    payload = jwt.verify(token, env.jwtRefreshSecret);
+    payload = jwt.verify(token, env.jwtRefreshSecret, { algorithms: ['HS256'] });
   } catch {
     clearRefreshCookie(res);
     throw httpError(401, 'REFRESH_TOKEN_INVALID', 'Refresh token is invalid or expired.');
@@ -149,7 +149,7 @@ export const logout = asyncHandler(async (req, res) => {
   const token = req.cookies?.[env.refreshCookieName];
   if (token) {
     try {
-      const payload = jwt.verify(token, env.jwtRefreshSecret);
+      const payload = jwt.verify(token, env.jwtRefreshSecret, { algorithms: ['HS256'] });
       const user = await User.findById(payload.sub).select('+refreshTokenHash');
       if (user?.refreshTokenHash === hashToken(token)) {
         user.refreshTokenHash = null;

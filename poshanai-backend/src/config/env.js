@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import logger from '../utils/logger.js';
 
 const required = ['MONGODB_URI'];
 for (const key of required) {
@@ -12,8 +13,27 @@ if (!accessSecret || !refreshSecret) {
   throw new Error('Set JWT_SECRET or both JWT_ACCESS_SECRET and JWT_REFRESH_SECRET.');
 }
 
+const nodeEnv = process.env.NODE_ENV ?? 'development';
+const placeholderSecrets = new Set(['CHANGEME', 'your_secret_here']);
+const jwtSecretIssues = [];
+for (const [name, secret] of [
+  ['JWT_ACCESS_SECRET', accessSecret],
+  ['JWT_REFRESH_SECRET', refreshSecret],
+]) {
+  if (secret.length < 32) jwtSecretIssues.push(`${name} must be at least 32 characters.`);
+  if (placeholderSecrets.has(secret)) jwtSecretIssues.push(`${name} must not use a placeholder value.`);
+}
+if (accessSecret === refreshSecret) {
+  jwtSecretIssues.push('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different.');
+}
+if (jwtSecretIssues.length > 0) {
+  const message = `Invalid JWT secret configuration: ${jwtSecretIssues.join(' ')}`;
+  if (nodeEnv === 'production') throw new Error(message);
+  logger.warn(message);
+}
+
 export const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
+  nodeEnv,
   port: Number(process.env.PORT ?? 5000),
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
