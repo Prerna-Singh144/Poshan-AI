@@ -50,6 +50,12 @@ function setRefreshCookie(res, token) {
     path: '/api/auth',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+  res.cookie(env.refreshCookiePresenceName, '1', {
+    secure: env.isProduction,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 }
 
 function clearRefreshCookie(res) {
@@ -58,6 +64,11 @@ function clearRefreshCookie(res) {
     secure: env.isProduction,
     sameSite: 'lax',
     path: '/api/auth',
+  });
+  res.clearCookie(env.refreshCookiePresenceName, {
+    secure: env.isProduction,
+    sameSite: 'lax',
+    path: '/',
   });
 }
 

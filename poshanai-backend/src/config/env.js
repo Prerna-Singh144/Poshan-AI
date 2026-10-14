@@ -26,5 +26,6 @@ export const env = {
   jwtAccessExpiry: process.env.JWT_ACCESS_EXPIRY ?? '15m',
   jwtRefreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? '7d',
   refreshCookieName: 'refreshToken',
+  refreshCookiePresenceName: 'refreshTokenPresent',
   isProduction: process.env.NODE_ENV === 'production',
 };
