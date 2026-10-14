@@ -185,8 +185,22 @@ export const upload = asyncHandler(async (req, res) => {
 });
 
 export const list = asyncHandler(async (req, res) => {
-  const reports = await Report.find({ userId: req.user._id }).sort({ uploadedAt: -1 });
-  return res.json({ success: true, data: reports.map((report) => publicReport(report)) });
+  const { page, limit } = req.pagination;
+  const filter = { userId: req.user._id };
+  const [reports, total] = await Promise.all([
+    Report.find(filter)
+      .select('-rawOcrText')
+      .sort({ uploadedAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    Report.countDocuments(filter),
+  ]);
+  return res.json({
+    success: true,
+    data: reports.map((report) => publicReport(report)),
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
 });
 
 export const getById = asyncHandler(async (req, res) => {

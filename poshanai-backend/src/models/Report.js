@@ -17,7 +17,7 @@ const extractedValueSchema = new mongoose.Schema(
 
 const reportSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     fileUrl: { type: String, required: true },
     fileSizeBytes: { type: Number, required: true, min: 0 },
     fileType: {
@@ -40,6 +40,8 @@ const reportSchema = new mongoose.Schema(
   },
   { versionKey: false },
 );
+
+reportSchema.index({ userId: 1, uploadedAt: -1 });
 
 const Report = mongoose.models.Report ?? mongoose.model('Report', reportSchema);
 export default Report;

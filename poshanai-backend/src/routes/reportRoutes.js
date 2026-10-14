@@ -9,6 +9,10 @@ const reportIdSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
 const emptyBodySchema = Joi.object({}).unknown(false);
+const paginationSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(10),
+}).unknown(true);
 
 function validationError() {
   const error = new Error('Request validation failed.');
@@ -21,6 +25,13 @@ function validateReportId(req, _res, next) {
   const { error, value } = reportIdSchema.validate(req.params, { abortEarly: false });
   if (error) return next(validationError());
   req.params = value;
+  return next();
+}
+
+function validateReportPagination(req, _res, next) {
+  const { error, value } = paginationSchema.validate(req.query, { abortEarly: false });
+  if (error) return next(validationError());
+  req.pagination = { page: value.page, limit: value.limit };
   return next();
 }
 
@@ -42,7 +53,7 @@ const uploadRoute = [verifyToken, uploadReportFile, validateEmptyUploadBody, rep
 
 router.post('/upload', ...uploadRoute);
 router.post('/', ...uploadRoute);
-router.get('/', verifyToken, reportController.list);
+router.get('/', verifyToken, validateReportPagination, reportController.list);
 router.get('/:id', verifyToken, validateReportId, reportController.getById);
 router.delete('/:id', verifyToken, validateReportId, reportController.remove);
 
