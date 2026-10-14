@@ -4,7 +4,10 @@ import Report from '../models/Report.js';
 import { removeUploadedFile, uploadDirectory } from '../middleware/uploadMiddleware.js';
 import { enqueueReportOcr } from '../jobs/ocrQueue.js';
 import { processReportOcr } from '../services/ocrProcessor.js';
+import { env } from '../config/env.js';
 import logger from '../utils/logger.js';
+
+const ocrFallbackTimeoutMs = 60_000;
 
 function httpError(statusCode, code, message) {
   const error = new Error(message);
@@ -34,6 +37,28 @@ function storedFilePath(fileUrl) {
   return path.resolve(uploadDirectory, path.basename(fileUrl));
 }
 
+function processReportWithTimeout(reportId) {
+  let timeout;
+  const timeoutError = new Error('Report OCR exceeded the 60-second development timeout.');
+  timeoutError.statusCode = 504;
+  timeoutError.code = 'OCR_TIMEOUT';
+  return Promise.race([
+    processReportOcr(reportId),
+    new Promise((_, reject) => {
+      timeout = setTimeout(() => reject(timeoutError), ocrFallbackTimeoutMs);
+    }),
+  ]).finally(() => clearTimeout(timeout));
+}
+
+async function removeQueuedReport(report, filePath) {
+  try {
+    await removeUploadedFile(filePath);
+    await Report.deleteOne({ _id: report._id });
+  } catch {
+    throw httpError(500, 'UPLOAD_CLEANUP_FAILED', 'The queued report could not be safely cleaned up.');
+  }
+}
+
 export const upload = asyncHandler(async (req, res) => {
   let report;
   try {
@@ -56,10 +81,35 @@ export const upload = asyncHandler(async (req, res) => {
     await enqueueReportOcr(report._id);
     return res.status(202).json({ success: true, data: { report: publicReport(report) } });
   } catch {
-    logger.warn('Redis OCR queue is unavailable; processing the report synchronously.');
+    if (env.isProduction) {
+      logger.warn('Redis OCR queue is unavailable; returning a retryable upload error.');
+      await removeQueuedReport(report, req.file.path);
+      res.set('Retry-After', '30');
+      throw httpError(503, 'OCR_QUEUE_UNAVAILABLE', 'Report processing is temporarily unavailable. Please retry.');
+    }
+    logger.warn('Redis OCR queue is unavailable; using the development-only synchronous OCR fallback.');
   }
 
-  report = await processReportOcr(report._id);
+  try {
+    report = await processReportWithTimeout(report._id);
+  } catch (error) {
+    if (error.code === 'OCR_TIMEOUT') {
+      await removeQueuedReport(report, req.file.path);
+    } else {
+      await Report.updateOne(
+        { _id: report._id, ocrStatus: 'processing' },
+        {
+          $set: {
+            ocrStatus: 'failed',
+            ocrError: typeof error.code === 'string' ? error.code : 'OCR_PROCESSING_FAILED',
+            processedAt: new Date(),
+            processingStartedAt: null,
+          },
+        },
+      );
+    }
+    throw error;
+  }
   if (!report) throw httpError(500, 'REPORT_PROCESSING_FAILED', 'The uploaded report could not be processed.');
   return res.status(201).json({ success: true, data: { report: publicReport(report) } });
 });

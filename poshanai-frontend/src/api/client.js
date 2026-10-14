@@ -53,6 +53,9 @@ export function normalizeApiError(error) {
       source?.code ??
       (error.response?.status ? `HTTP_${error.response.status}` : (error.code ?? 'NETWORK_ERROR')),
     message:
+      (source?.code === 'OCR_QUEUE_UNAVAILABLE'
+        ? 'Service temporarily unavailable, please retry.'
+        : null) ??
       source?.message ??
       (typeof responseData?.error === 'string' ? responseData.error : null) ??
       error.message ??
