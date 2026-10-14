@@ -22,6 +22,10 @@ PoshanAI/
 2. Run `docker compose up --build` and open `http://localhost:8080`. API health is available at `http://localhost:4000/health`.
 3. To run the JS apps directly, install dependencies in the root, `poshanai-backend`, and `poshanai-frontend`; run MongoDB locally and set `MONGODB_URI=mongodb://127.0.0.1:27017/poshanai` in `poshanai-backend/.env`. Set `REDIS_URL=redis://127.0.0.1:6379` only if you want OCR to use the Redis queue; without Redis, uploads run OCR synchronously. Then run `npm run dev` at the root.
 
+## Production Compose
+
+Copy `.env.production.example` to `.env`, replace every `CHANGEME` value with unique credentials, set `CLIENT_ORIGIN` to the deployed frontend origin, and ensure the MongoDB and Redis URLs use the same passwords as their service settings. Generate separate JWT secrets of at least 32 characters. Do not commit `.env`. Start the production stack with `docker compose -f docker-compose.prod.yml up -d`.
+
 ## Current implementation
 
 The frontend is a responsive landing page. The Express API connects to MongoDB and includes health endpoints, Helmet, restricted CORS, request-size limits, Mongo operator sanitization, API rate limiting, JWT authentication, and ownership-checked report and meal-plan endpoints. Report OCR uses Tesseract.js, with an optional Redis-backed queue and synchronous fallback. Meal plans use a replaceable IFCT RAG stub and an OpenAI-compatible OmniRoute gateway configured with `OMNIROUTE_URL`, `OMNIROUTE_MODEL`, and optional `OMNIROUTE_API_KEY`. Nutrient amounts shown in a plan are calculated from the selected IFCT records and serving weights; the current RAG catalog is a development stub, not a complete food database. The `ai-service` directories remain extension points.
