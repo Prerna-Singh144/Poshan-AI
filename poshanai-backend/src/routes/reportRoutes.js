@@ -3,6 +3,7 @@ import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import uploadReportFile, { cleanupUploadedFile } from '../middleware/uploadMiddleware.js';
 import * as reportController from '../controllers/reportController.js';
+import validationError from '../utils/validationError.js';
 
 const router = Router();
 const reportIdSchema = Joi.object({
@@ -13,13 +14,6 @@ const paginationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(10),
 }).unknown(true);
-
-function validationError() {
-  const error = new Error('Request validation failed.');
-  error.statusCode = 400;
-  error.code = 'VALIDATION_ERROR';
-  return error;
-}
 
 function validateReportId(req, _res, next) {
   const { error, value } = reportIdSchema.validate(req.params, { abortEarly: false });

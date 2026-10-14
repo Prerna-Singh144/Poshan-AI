@@ -3,9 +3,10 @@ import { mkdir, open, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import multer from 'multer';
 import { uploadFile, deleteFile } from '../services/storageService.js';
+import httpError from '../utils/httpError.js';
+import { UPLOAD_SETTINGS } from '../config/constants.js';
 
 const stagingDirectory = fileURLToPath(new URL('../../uploads/staging/', import.meta.url));
-const maxFileSize = 10 * 1024 * 1024;
 const extensionsByMimeType = new Map([
   ['application/pdf', '.pdf'],
   ['image/jpeg', '.jpg'],
@@ -16,13 +17,6 @@ const signaturesByMimeType = new Map([
   ['image/jpeg', Buffer.from([0xff, 0xd8, 0xff])],
   ['image/png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
 ]);
-
-function httpError(statusCode, code, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  error.code = code;
-  return error;
-}
 
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => {
@@ -38,7 +32,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: maxFileSize, files: 1, fields: 0 },
+  limits: {
+    fileSize: UPLOAD_SETTINGS.maxFileSizeBytes,
+    files: UPLOAD_SETTINGS.maxFiles,
+    fields: UPLOAD_SETTINGS.maxFields,
+  },
   fileFilter: (_req, file, callback) => {
     if (!extensionsByMimeType.has(file.mimetype)) {
       return callback(httpError(415, 'UNSUPPORTED_FILE_TYPE', 'Only PDF, JPEG, and PNG files are allowed.'));
@@ -124,4 +122,4 @@ export default function uploadReportFile(req, res, next) {
   });
 }
 
-export { maxFileSize };
+export const maxFileSize = UPLOAD_SETTINGS.maxFileSizeBytes;

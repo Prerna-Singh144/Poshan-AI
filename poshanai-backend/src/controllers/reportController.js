@@ -2,26 +2,14 @@ import mongoose from 'mongoose';
 import Report from '../models/Report.js';
 import User from '../models/User.js';
 import { cleanupUploadedFile } from '../middleware/uploadMiddleware.js';
-import { enqueueReportOcr } from '../jobs/ocrQueue.js';
+import { enqueueReportOcr } from '../jobs/queue.js';
 import { processReportOcr } from '../services/ocrProcessor.js';
 import { deleteFile, getSignedUrl } from '../services/storageService.js';
 import { env } from '../config/env.js';
 import logger from '../utils/logger.js';
-
-const ocrFallbackTimeoutMs = 60_000;
-const maxReportsPerUser = 50;
-const maxUploadBytesPerUser = 500 * 1024 * 1024;
-
-function httpError(statusCode, code, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  error.code = code;
-  return error;
-}
-
-function asyncHandler(handler) {
-  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
-}
+import asyncHandler from '../utils/asyncHandler.js';
+import httpError from '../utils/httpError.js';
+import { OCR_SETTINGS, UPLOAD_SETTINGS } from '../config/constants.js';
 
 function publicReport(report, includeOcrText = false) {
   const response = {
@@ -44,7 +32,7 @@ function processReportWithTimeout(reportId) {
   return Promise.race([
     processReportOcr(reportId),
     new Promise((_, reject) => {
-      timeout = setTimeout(() => reject(timeoutError), ocrFallbackTimeoutMs);
+      timeout = setTimeout(() => reject(timeoutError), OCR_SETTINGS.fallbackTimeoutMs);
     }),
   ]).finally(() => clearTimeout(timeout));
 }
@@ -78,11 +66,11 @@ async function reserveUploadQuota(userId, fileSizeBytes) {
       _id: userId,
       $expr: {
         $and: [
-          { $lt: [{ $ifNull: ['$uploadCount', 0] }, maxReportsPerUser] },
+          { $lt: [{ $ifNull: ['$uploadCount', 0] }, UPLOAD_SETTINGS.maxReportsPerUser] },
           {
             $lte: [
               { $add: [{ $ifNull: ['$uploadSizeBytes', 0] }, fileSizeBytes] },
-              maxUploadBytesPerUser,
+              UPLOAD_SETTINGS.maxBytesPerUser,
             ],
           },
         ],

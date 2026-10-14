@@ -1,17 +1,8 @@
 import MealPlan from '../models/MealPlan.js';
 import { generateMealPlan, getMedicalDisclaimer } from '../services/aiService.js';
 import logger from '../utils/logger.js';
-
-function httpError(statusCode, code, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  error.code = code;
-  return error;
-}
-
-function asyncHandler(handler) {
-  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
-}
+import asyncHandler from '../utils/asyncHandler.js';
+import httpError from '../utils/httpError.js';
 
 function publicMealPlan(mealPlan) {
   const plan = mealPlan.toObject();

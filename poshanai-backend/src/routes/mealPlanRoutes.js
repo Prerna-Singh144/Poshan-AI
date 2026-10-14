@@ -3,6 +3,7 @@ import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import * as mealPlanController from '../controllers/mealPlanController.js';
 import { supportedRegions } from '../rag/ragService.js';
+import validationError from '../utils/validationError.js';
 
 const router = Router();
 const allergyOptions = [
@@ -34,13 +35,6 @@ const listSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 }).unknown(false);
-
-function validationError() {
-  const error = new Error('Request validation failed.');
-  error.statusCode = 400;
-  error.code = 'VALIDATION_ERROR';
-  return error;
-}
 
 function validate(schema, source) {
   return (req, _res, next) => {

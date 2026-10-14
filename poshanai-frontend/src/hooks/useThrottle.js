@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import throttle from '../utils/throttle.js';
 
 /**
@@ -14,14 +14,23 @@ import throttle from '../utils/throttle.js';
  */
 export function useThrottle(callback, wait = 1000) {
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+  const throttledRef = useRef(null);
+  useLayoutEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
-  const throttledCallback = useMemo(
-    () => throttle((...args) => callbackRef.current(...args), wait),
-    [wait],
-  );
+  useLayoutEffect(() => {
+    const throttled = throttle((...args) => callbackRef.current(...args), wait);
+    throttledRef.current = throttled;
+    return () => {
+      throttled.cancel();
+      throttledRef.current = null;
+    };
+  }, [wait]);
 
-  useEffect(() => () => throttledCallback.cancel(), [throttledCallback]);
+  const throttledCallback = useCallback(function throttledCallback(...args) {
+    return throttledRef.current?.apply(this, args);
+  }, []);
 
   return throttledCallback;
 }

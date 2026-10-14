@@ -1,8 +1,9 @@
 import { Queue } from 'bullmq';
 import { env } from '../config/env.js';
 import logger from '../utils/logger.js';
+import { OCR_SETTINGS } from '../config/constants.js';
 
-export const queueName = 'ocr-processing';
+export const queueName = OCR_SETTINGS.queueName;
 let queue;
 let queueErrorLogged = false;
 
@@ -42,14 +43,17 @@ function getQueue() {
   if (!queue) {
     queue = new Queue(queueName, {
       connection: redisConnection(1, {
-        connectTimeout: 1000,
-        retryStrategy: (attempt) => (attempt <= 2 ? 100 : null),
+        connectTimeout: OCR_SETTINGS.queueConnectTimeoutMs,
+        retryStrategy: (attempt) =>
+          attempt <= OCR_SETTINGS.queueConnectionRetryCount
+            ? OCR_SETTINGS.queueConnectionRetryDelayMs
+            : null,
       }),
       defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 2000 },
-        removeOnComplete: 100,
-        removeOnFail: 500,
+        attempts: OCR_SETTINGS.queueAttempts,
+        backoff: { type: 'exponential', delay: OCR_SETTINGS.retryDelayMs },
+        removeOnComplete: OCR_SETTINGS.removeOnComplete,
+        removeOnFail: OCR_SETTINGS.removeOnFail,
       },
     });
     queue.on('error', () => {
@@ -69,10 +73,10 @@ export async function enqueueReportOcr(reportId, { jobId = `report-${reportId}` 
       { reportId: String(reportId) },
       {
         jobId,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 2000 },
-        removeOnComplete: 100,
-        removeOnFail: 500,
+        attempts: OCR_SETTINGS.queueAttempts,
+        backoff: { type: 'exponential', delay: OCR_SETTINGS.retryDelayMs },
+        removeOnComplete: OCR_SETTINGS.removeOnComplete,
+        removeOnFail: OCR_SETTINGS.removeOnFail,
       },
     );
     queueErrorLogged = false;

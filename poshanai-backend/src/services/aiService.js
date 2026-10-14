@@ -9,6 +9,7 @@ import {
   retrieveFoodsForDeficiencies,
 } from '../rag/ragService.js';
 import logger from '../utils/logger.js';
+import httpError from '../utils/httpError.js';
 
 const aiMealSchema = Joi.object({
   day: Joi.number().integer().min(1).max(7).required(),
@@ -40,13 +41,6 @@ const aiResponseSchema = Joi.object({
     })
     .required(),
 }).unknown(false);
-
-function httpError(statusCode, code, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  error.code = code;
-  return error;
-}
 
 function parseMealPlanResponse(text) {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');

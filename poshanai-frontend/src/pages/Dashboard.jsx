@@ -1,9 +1,3 @@
-// Once GET /dashboard/stats returns aggregate, non-identifying counts only:
-// import { useCachedFetch } from '../hooks/useCachedFetch.js';
-// import { Loader } from '../components/common/index.js';
-// const { data: stats, isLoading, error } = useCachedFetch('dashboard/stats', { ttl: 60_000 });
-// if (isLoading) return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((key) => <Loader key={key} variant="card" />)}</div>;
-// Keep profile, report, and nutrient details out of cached dashboard responses.
 export default function Dashboard() {
   return (
     <section className="mx-auto max-w-6xl space-y-4">

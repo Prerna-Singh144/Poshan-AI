@@ -2,17 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { env } from '../config/env.js';
-
-function httpError(statusCode, code, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  error.code = code;
-  return error;
-}
-
-function asyncHandler(handler) {
-  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
-}
+import asyncHandler from '../utils/asyncHandler.js';
+import httpError from '../utils/httpError.js';
+import { AUTH_SETTINGS } from '../config/constants.js';
 
 function userPayload(user) {
   return {
@@ -42,8 +34,6 @@ function createRefreshToken(user) {
   });
 }
 
-const maxRefreshSessions = 5;
-
 function issueSession(user, deviceInfo = 'Unknown device') {
   const refreshToken = createRefreshToken(user);
   const now = new Date();
@@ -65,13 +55,13 @@ function setRefreshCookie(res, token) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/api/auth',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: AUTH_SETTINGS.refreshCookieMaxAgeMs,
   });
   res.cookie(env.refreshCookiePresenceName, '1', {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: AUTH_SETTINGS.refreshCookieMaxAgeMs,
   });
 }
 
@@ -92,7 +82,7 @@ function clearRefreshCookie(res) {
 async function appendRefreshToken(userId, refreshTokenEntry) {
   const result = await User.updateOne(
     { _id: userId },
-    { $push: { refreshTokens: { $each: [refreshTokenEntry], $slice: -maxRefreshSessions } } },
+    { $push: { refreshTokens: { $each: [refreshTokenEntry], $slice: -AUTH_SETTINGS.maxRefreshSessions } } },
   );
   if (result.matchedCount !== 1) {
     throw new Error('User session could not be updated.');

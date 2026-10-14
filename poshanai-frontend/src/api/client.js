@@ -68,6 +68,10 @@ export function normalizeApiError(error) {
   return error;
 }
 
+export function getApiError(error) {
+  return error.apiError?.message ?? normalizeApiError(error).message;
+}
+
 async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = client

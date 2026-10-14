@@ -8,13 +8,12 @@ import {
   getReportQueue,
   queueName,
   redisConnection,
-} from '../jobs/ocrQueue.js';
+} from './queue.js';
 import Report from '../models/Report.js';
 import { processReportOcr } from '../services/ocrProcessor.js';
 import logger from '../utils/logger.js';
+import { OCR_SETTINGS } from '../config/constants.js';
 
-const processingTimeoutMs = 10 * 60 * 1000;
-const sweepIntervalMs = 5 * 60 * 1000;
 let worker;
 let sweepTimer;
 let sweepInProgress = false;
@@ -38,7 +37,7 @@ async function sweepStaleReports() {
   if (sweepInProgress) return;
   sweepInProgress = true;
   try {
-    const staleBefore = new Date(Date.now() - processingTimeoutMs);
+    const staleBefore = new Date(Date.now() - OCR_SETTINGS.processingTimeoutMs);
     const staleReports = await Report.find({
       ocrStatus: 'processing',
       $or: [
@@ -78,7 +77,7 @@ async function startWorker() {
   getReportQueue();
   worker = new Worker(queueName, processReportOcr, {
     connection: redisConnection(null),
-    concurrency: 2,
+    concurrency: OCR_SETTINGS.workerConcurrency,
   });
   worker.on('completed', () => logger.info('A report OCR job completed.'));
   worker.on('failed', (job, error) => {
@@ -96,9 +95,9 @@ async function startWorker() {
     void sweepStaleReports().catch(() => {
       logger.error('The stale report OCR sweep failed.');
     });
-  }, sweepIntervalMs);
+  }, OCR_SETTINGS.sweepIntervalMs);
   sweepTimer.unref();
-  logger.info('OCR worker listening to the ocr-processing queue with concurrency 2.');
+  logger.info(`OCR worker listening to the ocr-processing queue with concurrency ${OCR_SETTINGS.workerConcurrency}.`);
 }
 
 async function stopWorker() {

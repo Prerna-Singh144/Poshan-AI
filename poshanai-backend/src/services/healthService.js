@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
-import { redisConnection } from '../jobs/ocrQueue.js';
+import { redisConnection } from '../jobs/queue.js';
 import logger from '../utils/logger.js';
 
 let healthRedis;

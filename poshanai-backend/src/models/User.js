@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import { AUTH_SETTINGS } from '../config/constants.js';
 
 const refreshTokenSchema = new mongoose.Schema(
   {
@@ -26,7 +27,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.methods.setPassword = async function setPassword(password) {
-  this.passwordHash = await bcrypt.hash(password, 12);
+  this.passwordHash = await bcrypt.hash(password, AUTH_SETTINGS.bcryptSaltRounds);
 };
 
 userSchema.methods.verifyPassword = function verifyPassword(password) {

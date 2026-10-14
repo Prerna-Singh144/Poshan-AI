@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "worker": "node src/workers/ocrWorker.js",
+    "worker": "node src/jobs/worker.js",
     "test": "node --test"
   },
   "dependencies": {
