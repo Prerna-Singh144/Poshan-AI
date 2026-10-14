@@ -24,11 +24,20 @@ services:
     depends_on:
       mongo: { condition: service_healthy }
       redis: { condition: service_started }
+  ocr-worker:
+    build: ./poshanai-backend
+    command: ["npm", "run", "worker"]
+    env_file: .env
+    volumes: ["./poshanai-backend/uploads:/app/uploads"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_started }
   web:
     build:
       context: .
       dockerfile: poshanai-frontend/Dockerfile
-    ports: ["8080:80"]
+    ports: ["8080:80", "443:443"]
+    volumes: ["./nginx/certs:/etc/nginx/certs:ro"]
     depends_on: [api]
 volumes:
   mongo_data:

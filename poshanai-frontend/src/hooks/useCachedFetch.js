@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import apiClient, { payloadFrom } from '../api/client.js';
-import memoryCache from '../utils/memoryCache.js';
+import { memoryCache } from '../utils/memoryCache.js';
 
 const DEFAULT_TTL = 5 * 60 * 1000;
-const CACHEABLE_PATHS = new Set(['foods', 'dashboard/stats']);
+const CACHEABLE_PATHS = new Set();
 
 function getRequestUrl(url) {
   if (!url) return null;
@@ -25,7 +25,6 @@ function canCacheUrl(requestUrl) {
 
 function canCacheResponse(requestUrl, data) {
   if (!canCacheUrl(requestUrl)) return false;
-  if (requestUrl.pathname.endsWith('/foods')) return true;
   const stats = data?.stats ?? data;
   return (
     stats !== null &&
@@ -42,9 +41,8 @@ function createCacheKey(url, paramsKey) {
 /**
  * Fetches API data and revalidates cached, non-sensitive responses in the background.
  *
- * Only public IFCT food data and aggregate dashboard statistics are cached. Do not
- * return profile fields, report contents, nutrient values, or other health data from
- * these endpoints.
+ * Cache only endpoints explicitly added to the public, non-sensitive whitelist.
+ * Never cache profile fields, report contents, nutrient values, or other health data.
  *
  * @param {string} url API endpoint.
  * @param {{ ttl?: number, enabled?: boolean, params?: object }} [options]

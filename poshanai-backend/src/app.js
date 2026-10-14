@@ -7,12 +7,18 @@ import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import requestLogger from './middleware/requestLogger.js';
+import { getHealthStatus } from './services/healthService.js';
+import { RATE_LIMITS } from './config/constants.js';
 
 const app = express();
+app.set('trust proxy', 1);
+app.use(requestLogger);
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
+  windowMs: RATE_LIMITS.apiWindowMs,
+  limit: RATE_LIMITS.apiRequests,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: (_req, res) => res.status(429).json({
@@ -29,12 +35,18 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use('/api', apiLimiter);
 
-app.get('/health', (_req, res) => {
-  res.json({ success: true, data: { status: 'ok', service: 'poshanai-api' } });
+app.get('/health', async (_req, res, next) => {
+  try {
+    const health = await getHealthStatus();
+    return res.status(health.status === 'ok' ? 200 : 503).json(health);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/mealplans', mealPlanRoutes);
 
 const placeholderRouter = express.Router();
 placeholderRouter.use((_req, res) => {
@@ -44,7 +56,6 @@ placeholderRouter.use((_req, res) => {
   });
 });
 app.use('/api/users', placeholderRouter);
-app.use('/api/mealplans', placeholderRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -10,6 +10,10 @@ import { clearAllCache } from '../utils/memoryCache.js';
 
 export const AuthContext = createContext(null);
 
+function hasRefreshCookie() {
+  return document.cookie.split(';').some((cookie) => cookie.trim().startsWith('refreshTokenPresent='));
+}
+
 function getRefreshDelay(token) {
   try {
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
@@ -23,7 +27,7 @@ function getRefreshDelay(token) {
 export function AuthProvider({ children }) {
   const [accessToken, setToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => hasRefreshCookie());
   const refreshTimer = useRef(null);
   const setSession = useCallback(({ accessToken: nextToken, user: nextUser }) => {
     if (!nextToken) clearAllCache();
@@ -83,16 +87,18 @@ export function AuthProvider({ children }) {
       if (!token) clearAllCache();
     });
     let active = true;
-    apiRefresh()
-      .then((session) => {
-        if (active && session.accessToken) setSession(session);
-      })
-      .catch(() => {
-        if (active) setSession({ accessToken: null, user: null });
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+    if (hasRefreshCookie()) {
+      apiRefresh()
+        .then((session) => {
+          if (active && session.accessToken) setSession(session);
+        })
+        .catch(() => {
+          if (active) setSession({ accessToken: null, user: null });
+        })
+        .finally(() => {
+          if (active) setIsLoading(false);
+        });
+    }
     return () => {
       active = false;
       unsubscribe();

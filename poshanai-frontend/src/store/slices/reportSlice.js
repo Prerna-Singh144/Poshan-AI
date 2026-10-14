@@ -1,12 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import reportApi from '../../services/reportApi.js';
-import { getApiError } from '../../services/api.js';
+import { getReports, uploadReport as uploadReportFile, deleteReport as deleteReportFile } from '../../api/reportApi.js';
+import { getApiError } from '../../api/client.js';
 
 export const fetchReports = createAsyncThunk(
   'reports/fetchReports',
   async (_, { rejectWithValue }) => {
     try {
-      return await reportApi.getReports();
+      return await getReports();
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }
@@ -17,7 +17,7 @@ export const uploadReport = createAsyncThunk(
   'reports/uploadReport',
   async (fileOrFormData, { rejectWithValue }) => {
     try {
-      return await reportApi.uploadReport(fileOrFormData);
+      return await uploadReportFile(fileOrFormData);
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }
@@ -28,7 +28,7 @@ export const deleteReport = createAsyncThunk(
   'reports/deleteReport',
   async (id, { rejectWithValue }) => {
     try {
-      return await reportApi.deleteReport(id);
+      return await deleteReportFile(id);
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }
