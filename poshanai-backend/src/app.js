@@ -11,6 +11,7 @@ import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
+app.set('trust proxy', 1);
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
