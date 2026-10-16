@@ -8,7 +8,7 @@ export function notFoundHandler(_req, res) {
   });
 }
 
-export function errorHandler(error, _req, res, _next) {
+export function errorHandler(error, req, res, _next) {
   const duplicateKey = error.code === 11000;
   const status = duplicateKey
     ? 409
@@ -26,7 +26,13 @@ export function errorHandler(error, _req, res, _next) {
       ? error.message
       : 'An unexpected error occurred.';
 
-  if (status >= 500) logger.error(`Request failed with status ${status}`);
+  if (status >= 500) {
+    logger.error(`Request failed with status ${status}`, error, {
+      method: req.method,
+      path: req.path,
+      status,
+    });
+  }
 
   return res.status(status).json({
     success: false,

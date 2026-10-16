@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import logger from '../utils/logger.js';
 
 const required = ['MONGODB_URI'];
 for (const key of required) {
@@ -12,16 +13,54 @@ if (!accessSecret || !refreshSecret) {
   throw new Error('Set JWT_SECRET or both JWT_ACCESS_SECRET and JWT_REFRESH_SECRET.');
 }
 
+const nodeEnv = process.env.NODE_ENV ?? 'development';
+const storageType = process.env.STORAGE_TYPE ?? (nodeEnv === 'production' ? 's3' : 'local');
+if (!['local', 's3'].includes(storageType)) {
+  throw new Error('STORAGE_TYPE must be either local or s3.');
+}
+if (storageType === 's3' && (!process.env.S3_BUCKET || !process.env.S3_REGION)) {
+  throw new Error('S3_BUCKET and S3_REGION are required when STORAGE_TYPE=s3.');
+}
+if (Boolean(process.env.S3_ACCESS_KEY) !== Boolean(process.env.S3_SECRET_KEY)) {
+  throw new Error('Set both S3_ACCESS_KEY and S3_SECRET_KEY, or use the AWS default credential provider.');
+}
+const placeholderSecrets = new Set(['CHANGEME', 'your_secret_here']);
+const jwtSecretIssues = [];
+for (const [name, secret] of [
+  ['JWT_ACCESS_SECRET', accessSecret],
+  ['JWT_REFRESH_SECRET', refreshSecret],
+]) {
+  if (secret.length < 32) jwtSecretIssues.push(`${name} must be at least 32 characters.`);
+  if (placeholderSecrets.has(secret)) jwtSecretIssues.push(`${name} must not use a placeholder value.`);
+}
+if (accessSecret === refreshSecret) {
+  jwtSecretIssues.push('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different.');
+}
+if (jwtSecretIssues.length > 0) {
+  const message = `Invalid JWT secret configuration: ${jwtSecretIssues.join(' ')}`;
+  if (nodeEnv === 'production') throw new Error(message);
+  logger.warn(message);
+}
+
 export const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
+  nodeEnv,
   port: Number(process.env.PORT ?? 5000),
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
   redisUrl: process.env.REDIS_URL ?? null,
+  storageType,
+  s3Bucket: process.env.S3_BUCKET ?? null,
+  s3Region: process.env.S3_REGION ?? null,
+  s3AccessKey: process.env.S3_ACCESS_KEY ?? null,
+  s3SecretKey: process.env.S3_SECRET_KEY ?? null,
+  omniRouteUrl: process.env.OMNIROUTE_URL ?? 'http://localhost:20128/v1/chat/completions',
+  omniRouteModel: process.env.OMNIROUTE_MODEL ?? 'gemini-2.0-flash',
+  omniRouteApiKey: process.env.OMNIROUTE_API_KEY ?? null,
   jwtAccessSecret: accessSecret,
   jwtRefreshSecret: refreshSecret,
   jwtAccessExpiry: process.env.JWT_ACCESS_EXPIRY ?? '15m',
   jwtRefreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? '7d',
   refreshCookieName: 'refreshToken',
+  refreshCookiePresenceName: 'refreshTokenPresent',
   isProduction: process.env.NODE_ENV === 'production',
 };

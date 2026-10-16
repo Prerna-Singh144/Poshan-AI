@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, open, rm } from 'node:fs/promises';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import multer from 'multer';
+import { uploadFile, deleteFile } from '../services/storageService.js';
+import httpError from '../utils/httpError.js';
+import { UPLOAD_SETTINGS } from '../config/constants.js';
 
-const uploadDirectory = fileURLToPath(new URL('../../uploads/reports/', import.meta.url));
-const maxFileSize = 10 * 1024 * 1024;
+const stagingDirectory = fileURLToPath(new URL('../../uploads/staging/', import.meta.url));
 const extensionsByMimeType = new Map([
   ['application/pdf', '.pdf'],
   ['image/jpeg', '.jpg'],
@@ -17,17 +18,10 @@ const signaturesByMimeType = new Map([
   ['image/png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
 ]);
 
-function httpError(statusCode, code, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  error.code = code;
-  return error;
-}
-
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => {
-    mkdir(uploadDirectory, { recursive: true }).then(
-      () => callback(null, uploadDirectory),
+    mkdir(stagingDirectory, { recursive: true }).then(
+      () => callback(null, stagingDirectory),
       callback,
     );
   },
@@ -38,7 +32,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: maxFileSize, files: 1, fields: 0 },
+  limits: {
+    fileSize: UPLOAD_SETTINGS.maxFileSizeBytes,
+    files: UPLOAD_SETTINGS.maxFiles,
+    fields: UPLOAD_SETTINGS.maxFields,
+  },
   fileFilter: (_req, file, callback) => {
     if (!extensionsByMimeType.has(file.mimetype)) {
       return callback(httpError(415, 'UNSUPPORTED_FILE_TYPE', 'Only PDF, JPEG, and PNG files are allowed.'));
@@ -64,6 +62,25 @@ export async function removeUploadedFile(filePath) {
   await rm(filePath, { force: true });
 }
 
+export async function cleanupUploadedFile(file) {
+  let cleanupError;
+  if (file?.storageKey) {
+    try {
+      await deleteFile(file.storageKey);
+    } catch (error) {
+      cleanupError = error;
+    }
+  }
+  if (file?.path) {
+    try {
+      await removeUploadedFile(file.path);
+    } catch (error) {
+      cleanupError ??= error;
+    }
+  }
+  if (cleanupError) throw cleanupError;
+}
+
 export default function uploadReportFile(req, res, next) {
   upload(req, res, async (error) => {
     if (error) {
@@ -87,10 +104,16 @@ export default function uploadReportFile(req, res, next) {
         await removeUploadedFile(req.file.path);
         return next(httpError(415, 'INVALID_FILE_CONTENT', 'The uploaded file content does not match its declared type.'));
       }
+      req.file.storageKey = await uploadFile(
+        req.file.path,
+        `reports/${req.file.filename}`,
+        req.file.mimetype,
+      );
+      await removeUploadedFile(req.file.path);
       return next();
     } catch (validationError) {
       try {
-        await removeUploadedFile(req.file.path);
+        await cleanupUploadedFile(req.file);
       } catch {
         return next(httpError(500, 'UPLOAD_CLEANUP_FAILED', 'The uploaded file could not be safely cleaned up.'));
       }
@@ -99,4 +122,4 @@ export default function uploadReportFile(req, res, next) {
   });
 }
 
-export { maxFileSize, uploadDirectory };
+export const maxFileSize = UPLOAD_SETTINGS.maxFileSizeBytes;

@@ -63,17 +63,30 @@ const mealPlanSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    targetDeficiencies: { type: [String], required: true },
+    title: { type: String, trim: true, default: 'Personalized Meal Plan' },
+    preferences: { type: Object, default: {} },
+    targetDeficiencies: { type: [String], default: [] },
     planDurationDays: { type: Number, required: true, min: 1, max: 30, default: 7 },
-    meals: { type: [mealSchema], required: true },
-    aiModelUsed: { type: String, required: true },
-    ragSourcesUsed: { type: [String], required: true },
+    meals: {
+      type: [mealSchema],
+      required: true,
+      validate: {
+        validator(meals) {
+          if (!Array.isArray(meals) || meals.length < 7) return false;
+          const days = new Set(meals.map((meal) => meal.day));
+          return days.size >= 7;
+        },
+        message: 'A meal plan must cover all seven days.',
+      },
+    },
+    aiModelUsed: { type: String, default: 'omniroute-default' },
+    ragSourcesUsed: { type: [String], default: [] },
     disclaimer: { type: String, required: true },
     status: {
       type: String,
       required: true,
       enum: ['draft', 'active', 'completed'],
-      default: 'draft',
+      default: 'active',
       index: true,
     },
     generatedAt: { type: Date, required: true, default: Date.now },

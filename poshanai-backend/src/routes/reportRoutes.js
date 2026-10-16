@@ -1,21 +1,19 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
-import uploadReportFile, { removeUploadedFile } from '../middleware/uploadMiddleware.js';
+import uploadReportFile, { cleanupUploadedFile } from '../middleware/uploadMiddleware.js';
 import * as reportController from '../controllers/reportController.js';
+import validationError from '../utils/validationError.js';
 
 const router = Router();
 const reportIdSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
 const emptyBodySchema = Joi.object({}).unknown(false);
-
-function validationError() {
-  const error = new Error('Request validation failed.');
-  error.statusCode = 400;
-  error.code = 'VALIDATION_ERROR';
-  return error;
-}
+const paginationSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(10),
+}).unknown(true);
 
 function validateReportId(req, _res, next) {
   const { error, value } = reportIdSchema.validate(req.params, { abortEarly: false });
@@ -24,11 +22,18 @@ function validateReportId(req, _res, next) {
   return next();
 }
 
+function validateReportPagination(req, _res, next) {
+  const { error, value } = paginationSchema.validate(req.query, { abortEarly: false });
+  if (error) return next(validationError());
+  req.pagination = { page: value.page, limit: value.limit };
+  return next();
+}
+
 function validateEmptyUploadBody(req, _res, next) {
   const { error } = emptyBodySchema.validate(req.body ?? {}, { abortEarly: false });
   if (!error) return next();
 
-  removeUploadedFile(req.file?.path)
+  cleanupUploadedFile(req.file)
     .then(() => next(validationError()))
     .catch(() => {
       const cleanupError = new Error('The uploaded file could not be safely cleaned up.');
@@ -42,7 +47,7 @@ const uploadRoute = [verifyToken, uploadReportFile, validateEmptyUploadBody, rep
 
 router.post('/upload', ...uploadRoute);
 router.post('/', ...uploadRoute);
-router.get('/', verifyToken, reportController.list);
+router.get('/', verifyToken, validateReportPagination, reportController.list);
 router.get('/:id', verifyToken, validateReportId, reportController.getById);
 router.delete('/:id', verifyToken, validateReportId, reportController.remove);
 

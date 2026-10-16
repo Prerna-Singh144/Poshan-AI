@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import Layout from './components/common/Layout.jsx';
-import PublicLayout from './components/layout/Layout.jsx';
+import Layout, { PublicLayout } from './components/layout/Layout.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import Dashboard from './pages/Dashboard.jsx';

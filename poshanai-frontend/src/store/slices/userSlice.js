@@ -1,12 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import userApi from '../../services/userApi.js';
-import { getApiError } from '../../services/api.js';
+import { getProfile, updateProfile as updateUserProfile } from '../../api/userApi.js';
+import { getApiError } from '../../api/client.js';
 
 export const fetchProfile = createAsyncThunk(
   'user/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      return await userApi.getProfile();
+      return await getProfile();
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }
@@ -17,7 +17,7 @@ export const updateProfile = createAsyncThunk(
   'user/updateProfile',
   async (profile, { rejectWithValue }) => {
     try {
-      return await userApi.updateProfile(profile);
+      return await updateUserProfile(profile);
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }

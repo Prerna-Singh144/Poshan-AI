@@ -1,12 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import mealPlanApi from '../../services/mealPlanApi.js';
-import { getApiError } from '../../services/api.js';
+import { getMealPlans, getMealPlan, generateMealPlan as requestMealPlanGeneration } from '../../api/mealPlanApi.js';
+import { getApiError } from '../../api/client.js';
 
 export const fetchMealPlans = createAsyncThunk(
   'mealPlans/fetchMealPlans',
   async (_, { rejectWithValue }) => {
     try {
-      return await mealPlanApi.getMealPlans();
+      return await getMealPlans();
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }
@@ -17,7 +17,7 @@ export const fetchMealPlanById = createAsyncThunk(
   'mealPlans/fetchById',
   async (id, { rejectWithValue }) => {
     try {
-      return await mealPlanApi.getMealPlan(id);
+      return await getMealPlan(id);
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }
@@ -26,9 +26,9 @@ export const fetchMealPlanById = createAsyncThunk(
 
 export const generateMealPlan = createAsyncThunk(
   'mealPlans/generate',
-  async (preferences, { rejectWithValue }) => {
+  async (request, { rejectWithValue }) => {
     try {
-      return await mealPlanApi.generateMealPlan(preferences);
+      return await requestMealPlanGeneration(request);
     } catch (error) {
       return rejectWithValue(getApiError(error));
     }

@@ -141,11 +141,12 @@
       "Indexed Report model and authenticated report upload/list/get/delete endpoints with ownership checks.",
       "UUID-named, signature-checked PDF/JPEG/PNG uploads with a 10 MB limit.",
       "Tesseract.js OCR with an optional Redis-backed BullMQ worker and synchronous fallback for PDF and image reports.",
-      "Sample OCR parser/model tests and Postman instructions."
+      "Sample OCR parser/model tests and Postman instructions.",
+      "Authenticated MealPlan generation/list/detail/status endpoints with server-applied medical disclaimers."
     ],
     "pending": [
-      "User profile and meal-plan data endpoints are currently placeholders returning NOT_IMPLEMENTED.",
-      "AI-service implementation, IFCT integration, and meal-plan generation.",
+      "User profile endpoints are currently placeholders returning NOT_IMPLEMENTED.",
+      "Production IFCT RAG integration; the current meal-plan RAG service is a small replaceable stub.",
       "Automated integration tests against a running Redis instance and resolution of existing frontend hook lint errors."
     ],
     "source_note": "Status is inferred from the checked-in source. Re-check implementation before relying on this section."
@@ -169,6 +170,9 @@
       "JWT_REFRESH_EXPIRY": "Refresh token expiry; default 7d.",
       "CLIENT_URL": "Allowed frontend origin; falls back to CLIENT_ORIGIN and then http://localhost:5173.",
       "GEMINI_API_KEY": "Optional/planned AI integration credential; keep secret and server-side.",
+      "OMNIROUTE_URL": "OpenAI-compatible chat-completions endpoint; defaults to http://localhost:20128/v1/chat/completions.",
+      "OMNIROUTE_MODEL": "Model identifier configured in the OmniRoute gateway; defaults to gemini-2.0-flash.",
+      "OMNIROUTE_API_KEY": "Optional gateway credential; keep secret and server-side.",
       "REDIS_URL": "Optional. When configured and available, report OCR is queued; otherwise uploads run OCR synchronously. Default Compose configuration points to its Redis service."
     },
     "frontend_env": {
@@ -247,12 +251,6 @@
         "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
       },
       {
-        "method": "GET",
-        "path": "/api/reports",
-        "auth": "Access token",
-        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
-      },
-      {
         "method": "POST",
         "path": "/api/reports/upload",
         "auth": "Access token",
@@ -279,25 +277,38 @@
         "status": "Implemented; requires ownership and deletes the stored file."
       },
       {
-        "method": "GET",
-        "path": "/api/meal-plans",
-        "auth": "Expected to be authenticated; backend currently returns NOT_IMPLEMENTED.",
-        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
-      },
-      {
-        "method": "GET",
-        "path": "/api/meal-plans/{id}",
-        "auth": "Expected to be authenticated; backend currently returns NOT_IMPLEMENTED.",
-        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
-      },
-      {
         "method": "POST",
-        "path": "/api/meal-plans",
-        "auth": "Expected to be authenticated; backend currently returns NOT_IMPLEMENTED.",
-        "status": "Frontend client calls this; backend currently returns NOT_IMPLEMENTED."
+        "path": "/api/mealplans/generate",
+        "auth": "Access token",
+        "body": {
+          "reportId": "ObjectId of an OCR-completed report owned by the caller.",
+          "preferences": "Optional object containing dietType, allergies, region, and activityLevel."
+        },
+        "status": "Implemented; persists a validated plan and includes the medical disclaimer."
+      },
+      {
+        "method": "GET",
+        "path": "/api/mealplans",
+        "auth": "Access token",
+        "status": "Implemented; returns only the authenticated user's meal plans."
+      },
+      {
+        "method": "GET",
+        "path": "/api/mealplans/{id}",
+        "auth": "Access token",
+        "status": "Implemented; requires plan ownership."
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/mealplans/{id}/status",
+        "auth": "Access token",
+        "body": {
+          "status": "active or completed"
+        },
+        "status": "Implemented; requires plan ownership."
       }
     ],
-    "routing_note": "Current app mounts placeholder routes at /api/mealplans without a hyphen, while the frontend client expects /api/meal-plans. Reconcile paths when implementing meal-plan routes."
+    "routing_note": "Meal-plan API and frontend client use /api/mealplans. The frontend generation request must include reportId and may include preferences."
   },
   "database_schema": {
     "User": {
@@ -380,16 +391,43 @@
       "additional_schema_options": "Schema uses versionKey false and explicit uploadedAt/processedAt fields."
     },
     "MealPlan": {
-      "status": "Planned; no backend model implemented.",
-      "collection": "mealplans (Mongoose default naming must be confirmed)",
-      "proposed_fields": {
-        "userId": "ObjectId reference to User; required.",
-        "title": "String; generated or user-facing plan title.",
-        "meals": "Array; exact item shape not confirmed.",
-        "preferences": "Object; exact schema not confirmed.",
-        "createdAt": "Date."
+      "status": "Implemented in poshanai-backend/src/models/MealPlan.js.",
+      "collection": "mealplans",
+      "fields": {
+        "userId": "Required ObjectId reference to User; indexed.",
+        "reportId": "Required ObjectId reference to Report; indexed.",
+        "title": "Required trimmed string, 3-120 characters.",
+        "meals": {
+          "type": "Array with entries for all seven days.",
+          "item_shape": {
+            "day": "Integer from 1 through 7.",
+            "mealType": "breakfast, lunch, dinner, or snack.",
+            "items": [
+              {
+                "foodName": "IFCT food name.",
+                "ifctCode": "IFCT identifier.",
+                "quantityGrams": "Positive number of grams.",
+                "nutrients": {
+                  "calories": "Number, kcal per item portion.",
+                  "protein": "Number, g per item portion.",
+                  "carbs": "Number, g per item portion.",
+                  "fat": "Number, g per item portion.",
+                  "iron": "Number, mg per item portion.",
+                  "calcium": "Number, mg per item portion.",
+                  "vitaminD": "Number, micrograms per item portion.",
+                  "vitaminB12": "Number or null when unavailable in IFCT."
+                }
+              }
+            ]
+          }
+        },
+        "preferences": "Object containing dietType, allergies, optional region, and activityLevel.",
+        "disclaimer": "Required server-provided medical disclaimer.",
+        "status": "active or completed; defaults to active.",
+        "createdAt": "Date, Mongoose timestamp.",
+        "updatedAt": "Date, Mongoose timestamp."
       },
-      "note": "Treat this as a placeholder, not an approved schema."
+      "additional_schema_options": "Schema uses timestamps, versionKey false, and explicit mealplans collection."
     },
     "DeficiencyLog": {
       "status": "Planned; no backend model implemented.",
