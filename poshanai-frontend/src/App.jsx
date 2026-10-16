@@ -11,6 +11,7 @@ import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import MealPlanView from './pages/MealPlanView.jsx';
 import NotFound from './pages/NotFound.jsx';
+import Landing from './pages/Landing.jsx';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
         </Route>
+        <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route element={<ProtectedRoute />}>

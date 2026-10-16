@@ -154,6 +154,7 @@
     {
       "issue": "Frontend full lint currently reports errors in poshanai-frontend/src/hooks/useThrottle.js under react-hooks/refs and a warning in useCachedFetch.js.",
       "status": "Existing issue observed during repository validation; unrelated to AI_CONTEXT.json."
+
     }
   ],
   "environment_variables": {
