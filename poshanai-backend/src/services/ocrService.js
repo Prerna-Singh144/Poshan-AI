@@ -7,13 +7,18 @@ import { OCR_SETTINGS } from '../config/constants.js';
 import { extractValuesFromText } from './reportParser.js';
 
 const tesseractCachePath = fileURLToPath(new URL('../../uploads/tesseract-cache/', import.meta.url));
+const tesseractDataPath = fileURLToPath(new URL('../../tessdata/', import.meta.url));
 let workerPromise;
 export { extractValuesFromText } from './reportParser.js';
 
 async function getWorker() {
   if (!workerPromise) {
     workerPromise = mkdir(tesseractCachePath, { recursive: true })
-      .then(() => createWorker(OCR_SETTINGS.language, undefined, { cachePath: tesseractCachePath }))
+      .then(() => createWorker(OCR_SETTINGS.language, undefined, {
+        cachePath: tesseractCachePath,
+        langPath: tesseractDataPath,
+        gzip: false,
+      }))
       .catch((error) => {
         workerPromise = null;
         throw error;

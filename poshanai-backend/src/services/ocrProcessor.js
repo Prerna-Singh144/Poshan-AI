@@ -1,5 +1,6 @@
 import Report from '../models/Report.js';
 import { extractTextFromReport } from './ocrService.js';
+import { flagBiomarkerValue, normalizeBiomarkerValue } from './reportParser.js';
 import { cleanupDownloadedFile, downloadFile } from './storageService.js';
 
 export async function processReportOcr(reportId) {
@@ -29,8 +30,16 @@ export async function processReportOcr(reportId) {
     {
       $set: {
         ocrStatus: 'completed',
+        reviewStatus: 'pending',
         rawOcrText: result.rawText,
-        extractedValues: result.extractedValues,
+        extractedValues: result.extractedValues.map((value) => {
+          const normalized = normalizeBiomarkerValue(value.nutrient, value.value, value.unit);
+          return {
+            ...value,
+            normalizedValue: normalized.value,
+            normalizedUnit: normalized.unit,
+          };
+        }),
         processedAt: new Date(),
         processingStartedAt: null,
         ocrError: null,

@@ -10,12 +10,15 @@ import logger from '../utils/logger.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import httpError from '../utils/httpError.js';
 import { OCR_SETTINGS, UPLOAD_SETTINGS } from '../config/constants.js';
+import { flagBiomarkerValue, normalizeBiomarkerValue } from '../services/reportParser.js';
+import { logAuditEvent } from '../services/auditService.js';
 
 function publicReport(report, includeOcrText = false) {
   const response = {
     id: String(report._id),
     fileType: report.fileType,
     ocrStatus: report.ocrStatus,
+    reviewStatus: report.reviewStatus,
     extractedValues: report.extractedValues,
     uploadedAt: report.uploadedAt,
     processedAt: report.processedAt,
@@ -137,6 +140,12 @@ export const upload = asyncHandler(async (req, res) => {
 
   try {
     await enqueueReportOcr(report._id);
+    await logAuditEvent({
+      userId: req.user._id,
+      action: 'upload',
+      req,
+      metadata: { reportId: report._id, fileType: report.fileType, fileSizeBytes: report.fileSizeBytes },
+    });
     return res.status(202).json({ success: true, data: { report: publicReport(report) } });
   } catch {
     if (env.isProduction) {
@@ -169,6 +178,12 @@ export const upload = asyncHandler(async (req, res) => {
     throw error;
   }
   if (!report) throw httpError(500, 'REPORT_PROCESSING_FAILED', 'The uploaded report could not be processed.');
+  await logAuditEvent({
+    userId: req.user._id,
+    action: 'upload',
+    req,
+    metadata: { reportId: report._id, fileType: report.fileType, fileSizeBytes: report.fileSizeBytes },
+  });
   return res.status(201).json({ success: true, data: { report: publicReport(report) } });
 });
 
@@ -200,6 +215,27 @@ export const getById = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: { report: reportData } });
 });
 
+export const review = asyncHandler(async (req, res) => {
+  const report = await Report.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!report) throw httpError(404, 'REPORT_NOT_FOUND', 'Report not found.');
+  if (report.ocrStatus !== 'completed') throw httpError(409, 'REPORT_NOT_READY', 'The report must finish processing before review.');
+  if (report.reviewStatus !== 'pending') throw httpError(409, 'REPORT_ALREADY_REVIEWED', 'This report has already been reviewed.');
+  if (req.body.reviewStatus === 'corrected') {
+    report.extractedValues = req.body.extractedValues.map((value) => {
+      const normalized = normalizeBiomarkerValue(value.nutrient, value.value, value.unit);
+      return {
+        ...value,
+        normalizedValue: normalized.value,
+        normalizedUnit: normalized.unit,
+        flag: flagBiomarkerValue(value.value, value.referenceRange),
+      };
+    });
+  }
+  report.reviewStatus = req.body.reviewStatus;
+  await report.save();
+  return res.json({ success: true, data: { report: publicReport(report) } });
+});
+
 export const remove = asyncHandler(async (req, res) => {
   const report = await Report.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
   if (!report) throw httpError(404, 'REPORT_NOT_FOUND', 'Report not found.');
@@ -219,7 +255,14 @@ export const remove = asyncHandler(async (req, res) => {
     throw httpError(500, 'REPORT_FILE_CLEANUP_FAILED', 'The report record was deleted, but its stored file or quota could not be cleaned up.');
   }
 
+  await logAuditEvent({
+    userId: req.user._id,
+    action: 'delete',
+    req,
+    metadata: { reportId: report._id, resource: 'report' },
+  });
+
   return res.json({ success: true, data: { id: String(report._id), deleted: true } });
 });
 
-export default { upload, list, getById, remove };
+export default { upload, list, getById, review, remove };

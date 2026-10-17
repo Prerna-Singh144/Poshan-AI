@@ -22,6 +22,19 @@ const userSchema = new mongoose.Schema(
     uploadCount: { type: Number, default: 0, min: 0 },
     uploadSizeBytes: { type: Number, default: 0, min: 0 },
     uploadQuotaInitialized: { type: Boolean, default: false, select: false },
+    consent: {
+      given: { type: Boolean, required: true },
+      givenAt: { type: Date, required: true },
+      version: { type: String, default: '1.0' },
+    },
+    status: {
+      type: String,
+      enum: ['active', 'pending_deletion', 'deleted'],
+      default: 'active',
+      index: true,
+    },
+    deletedAt: { type: Date, default: null },
+    deletionScheduledAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },
 );

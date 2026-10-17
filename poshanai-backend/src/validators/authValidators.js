@@ -5,6 +5,15 @@ const registerSchema = Joi.object({
   name: Joi.string().trim().min(2).max(80).required(),
   email: Joi.string().trim().email().max(254).required(),
   password: Joi.string().min(8).max(128).required(),
+  consent: Joi.alternatives()
+    .try(
+      Joi.boolean().valid(true),
+      Joi.object({
+        given: Joi.boolean().valid(true).required(),
+        version: Joi.string().optional(),
+      }),
+    )
+    .required(),
 }).required();
 
 const loginSchema = Joi.object({
@@ -17,7 +26,13 @@ const emptySchema = Joi.object({}).required();
 function validate(schema) {
   return (req, _res, next) => {
     const { error, value } = schema.validate(req.body ?? {}, { abortEarly: false, stripUnknown: true });
-    if (error) return next(validationError());
+    if (error) {
+      const onlyConsentError = error.details.every((d) => d.path[0] === 'consent');
+      if (onlyConsentError) {
+        return next(validationError('You must accept the privacy policy'));
+      }
+      return next(validationError());
+    }
     req.body = value;
     return next();
   };

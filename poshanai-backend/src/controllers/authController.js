@@ -4,7 +4,8 @@ import User from '../models/User.js';
 import { env } from '../config/env.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import httpError from '../utils/httpError.js';
-import { AUTH_SETTINGS } from '../config/constants.js';
+import { AUTH_SETTINGS, COMPLIANCE_SETTINGS } from '../config/constants.js';
+import { logAuditEvent } from '../services/auditService.js';
 
 function userPayload(user) {
   return {
@@ -12,6 +13,8 @@ function userPayload(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    consent: user.consent,
+    status: user.status,
     createdAt: user.createdAt,
   };
 }
@@ -99,12 +102,31 @@ export const register = asyncHandler(async (req, res) => {
     throw httpError(409, 'EMAIL_IN_USE', 'An account with this email already exists.');
   }
 
-  const user = new User({ name: req.body.name, email });
+  const consentGiven = typeof req.body.consent === 'boolean' ? req.body.consent : Boolean(req.body.consent?.given);
+  if (!consentGiven) {
+    throw httpError(400, 'VALIDATION_ERROR', 'You must accept the privacy policy');
+  }
+
+  const consentVersion = (typeof req.body.consent === 'object' && req.body.consent?.version)
+    ? req.body.consent.version
+    : (COMPLIANCE_SETTINGS?.policyVersion ?? '1.0');
+
+  const user = new User({
+    name: req.body.name,
+    email,
+    consent: {
+      given: true,
+      givenAt: new Date(),
+      version: consentVersion,
+    },
+  });
   await user.setPassword(req.body.password);
   const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
   user.refreshTokens.push(issued.refreshTokenEntry);
   await user.save();
   setRefreshCookie(res, issued.refreshToken);
+
+  await logAuditEvent({ userId: user._id, action: 'register', req });
 
   return res.status(201).json({ success: true, data: issued.data });
 });
@@ -115,9 +137,16 @@ export const login = asyncHandler(async (req, res) => {
     throw httpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
   }
 
+  if (user.status === 'pending_deletion') {
+    throw httpError(403, 'ACCOUNT_DELETION_PENDING', 'This account is scheduled for deletion.');
+  }
+
   const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
   await appendRefreshToken(user._id, issued.refreshTokenEntry);
   setRefreshCookie(res, issued.refreshToken);
+
+  await logAuditEvent({ userId: user._id, action: 'login', req });
+
   return res.json({ success: true, data: issued.data });
 });
 
@@ -177,6 +206,7 @@ export const refresh = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(async (req, res) => {
   const token = req.cookies?.[env.refreshCookieName];
+  let loggedUserId = null;
   if (token) {
     let payload;
     try {
@@ -185,6 +215,7 @@ export const logout = asyncHandler(async (req, res) => {
       // Clear invalid or expired cookies without disclosing token details.
     }
     if (payload?.type === 'refresh' && payload.sub) {
+      loggedUserId = payload.sub;
       await User.updateOne(
         { _id: payload.sub },
         { $pull: { refreshTokens: { hash: hashToken(token) } } },
@@ -193,6 +224,7 @@ export const logout = asyncHandler(async (req, res) => {
   }
 
   clearRefreshCookie(res);
+  await logAuditEvent({ userId: loggedUserId, action: 'logout', req });
   return res.json({ success: true, data: { message: 'Logged out.' } });
 });
 
@@ -205,6 +237,7 @@ export const logoutAll = asyncHandler(async (req, res) => {
     throw httpError(404, 'USER_NOT_FOUND', 'User not found.');
   }
   clearRefreshCookie(res);
+  await logAuditEvent({ userId: req.user.id, action: 'logout_all', req });
   return res.json({ success: true, data: { message: 'Logged out of all devices.' } });
 });
 

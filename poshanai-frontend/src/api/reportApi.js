@@ -19,5 +19,16 @@ export async function deleteReport(id) {
   return id;
 }
 
-const reportApi = { getReports, uploadReport, deleteReport };
+export async function getReport(id) {
+  return payloadFrom(await client.get(`/reports/${encodeURIComponent(id)}`));
+}
+
+export async function reviewReport(id, reviewStatus, extractedValues) {
+  return payloadFrom(await client.patch(`/reports/${encodeURIComponent(id)}/review`, {
+    reviewStatus,
+    ...(reviewStatus === 'corrected' ? { extractedValues } : {}),
+  }));
+}
+
+const reportApi = { getReports, uploadReport, deleteReport, getReport, reviewReport };
 export default reportApi;

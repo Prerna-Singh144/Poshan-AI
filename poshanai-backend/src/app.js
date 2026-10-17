@@ -8,6 +8,8 @@ import { env } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import requestLogger from './middleware/requestLogger.js';
 import { getHealthStatus } from './services/healthService.js';
@@ -47,15 +49,8 @@ app.get('/health', async (_req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/mealplans', mealPlanRoutes);
-
-const placeholderRouter = express.Router();
-placeholderRouter.use((_req, res) => {
-  res.status(501).json({
-    success: false,
-    error: { code: 'NOT_IMPLEMENTED', message: 'This endpoint is not implemented yet.' },
-  });
-});
-app.use('/api/users', placeholderRouter);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -10,6 +10,22 @@ const reportIdSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
 const emptyBodySchema = Joi.object({}).unknown(false);
+const reviewSchema = Joi.object({
+  reviewStatus: Joi.string().valid('confirmed', 'corrected').required(),
+  extractedValues: Joi.when('reviewStatus', {
+    is: 'corrected',
+    then: Joi.array().items(Joi.object({
+      nutrient: Joi.string().valid('Vitamin D', 'Vitamin B12', 'Iron', 'Calcium', 'Hemoglobin').required(),
+      value: Joi.number().required(),
+      unit: Joi.string().allow(null, '').default(null),
+      referenceRange: Joi.string().allow(null, '').default(null),
+      flag: Joi.string().valid('normal', 'low', 'high', 'unknown').default('unknown'),
+      normalizedValue: Joi.number().allow(null).default(null),
+      normalizedUnit: Joi.string().allow(null, '').default(null),
+    }).unknown(false)).required(),
+    otherwise: Joi.forbidden(),
+  }),
+}).unknown(false);
 const paginationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(10),
@@ -49,6 +65,12 @@ router.post('/upload', ...uploadRoute);
 router.post('/', ...uploadRoute);
 router.get('/', verifyToken, validateReportPagination, reportController.list);
 router.get('/:id', verifyToken, validateReportId, reportController.getById);
+router.patch('/:id/review', verifyToken, validateReportId, (req, _res, next) => {
+  const { error, value } = reviewSchema.validate(req.body, { abortEarly: false, convert: true });
+  if (error) return next(validationError());
+  req.body = value;
+  return next();
+}, reportController.review);
 router.delete('/:id', verifyToken, validateReportId, reportController.remove);
 
 export default router;

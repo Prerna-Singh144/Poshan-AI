@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { createHash, createHmac } from 'node:crypto';
 import logger from '../utils/logger.js';
 
 const required = ['MONGODB_URI'];
@@ -42,6 +43,9 @@ if (jwtSecretIssues.length > 0) {
   logger.warn(message);
 }
 
+const encryptionKey = process.env.ENCRYPTION_KEY ?? createHash('sha256').update(accessSecret).digest('base64');
+const signingKey = process.env.SIGNING_KEY ?? createHmac('sha512', accessSecret).update('poshanai-signing').digest('base64');
+
 export const env = {
   nodeEnv,
   port: Number(process.env.PORT ?? 5000),
@@ -53,6 +57,7 @@ export const env = {
   s3Region: process.env.S3_REGION ?? null,
   s3AccessKey: process.env.S3_ACCESS_KEY ?? null,
   s3SecretKey: process.env.S3_SECRET_KEY ?? null,
+  s3KmsKeyId: process.env.S3_KMS_KEY_ID ?? null,
   omniRouteUrl: process.env.OMNIROUTE_URL ?? 'http://localhost:20128/v1/chat/completions',
   omniRouteModel: process.env.OMNIROUTE_MODEL ?? 'gemini-2.0-flash',
   omniRouteApiKey: process.env.OMNIROUTE_API_KEY ?? null,
@@ -63,4 +68,7 @@ export const env = {
   refreshCookieName: 'refreshToken',
   refreshCookiePresenceName: 'refreshTokenPresent',
   isProduction: process.env.NODE_ENV === 'production',
+  reportRetentionDays: Number(process.env.REPORT_RETENTION_DAYS ?? 365),
+  encryptionKey,
+  signingKey,
 };
