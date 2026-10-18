@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import encrypt from 'mongoose-encryption';
+import { env } from '../config/env.js';
 
 const extractedValueSchema = new mongoose.Schema(
   {
@@ -11,6 +13,8 @@ const extractedValueSchema = new mongoose.Schema(
     unit: { type: String, default: null },
     referenceRange: { type: String, default: null },
     flag: { type: String, enum: ['normal', 'low', 'high', 'unknown'], required: true },
+    normalizedValue: { type: Number, default: null },
+    normalizedUnit: { type: String, default: null },
   },
   { _id: false },
 );
@@ -32,16 +36,24 @@ const reportSchema = new mongoose.Schema(
       required: true,
     },
     ocrError: { type: String, default: null },
+    reviewStatus: { type: String, enum: ['pending', 'confirmed', 'corrected'], default: 'pending', required: true },
     processingStartedAt: { type: Date, default: null },
     rawOcrText: { type: String, default: '' },
     extractedValues: { type: [extractedValueSchema], default: [] },
     uploadedAt: { type: Date, default: Date.now, required: true },
     processedAt: { type: Date, default: null },
+    retentionWarningSentAt: { type: Date, default: null },
   },
   { versionKey: false },
 );
 
 reportSchema.index({ userId: 1, uploadedAt: -1 });
+
+reportSchema.plugin(encrypt, {
+  encryptionKey: env.encryptionKey,
+  signingKey: env.signingKey,
+  encryptedFields: ['rawOcrText'],
+});
 
 const Report = mongoose.models.Report ?? mongoose.model('Report', reportSchema);
 export default Report;

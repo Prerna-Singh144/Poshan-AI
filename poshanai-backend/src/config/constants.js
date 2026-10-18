@@ -24,7 +24,7 @@ export const OCR_SETTINGS = Object.freeze({
   queueConnectTimeoutMs: 1000,
   queueConnectionRetryCount: 2,
   queueConnectionRetryDelayMs: 100,
-  language: 'eng',
+  language: 'eng+hin',
   maxPdfPages: 25,
   maxPdfPagePixels: 40_000_000,
   pdfRenderScale: 2,
@@ -36,4 +36,11 @@ export const OCR_SETTINGS = Object.freeze({
   workerConcurrency: 2,
   processingTimeoutMs: 10 * 60 * 1000,
   sweepIntervalMs: 5 * 60 * 1000,
+});
+
+export const COMPLIANCE_SETTINGS = Object.freeze({
+  policyVersion: '1.0',
+  reportRetentionDays: 365,
+  retentionWarningDays: 7,
+  accountDeletionGraceDays: 30,
 });

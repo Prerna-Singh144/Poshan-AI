@@ -1,0 +1,105 @@
+name: PoshanAI CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+      matrix:
+        check: [lint, test, build, security, docker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: matrix.check != 'docker'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache frontend node_modules
+        if: matrix.check == 'lint' || matrix.check == 'build'
+        id: frontend-cache
+        uses: actions/cache@v4
+        with:
+          path: poshanai-frontend/node_modules
+          key: frontend-modules-${{ runner.os }}-${{ hashFiles('poshanai-frontend/package-lock.json') }}
+
+      - name: Cache backend node_modules
+        if: matrix.check == 'test'
+        id: backend-cache
+        uses: actions/cache@v4
+        with:
+          path: poshanai-backend/node_modules
+          key: backend-modules-${{ runner.os }}-${{ hashFiles('poshanai-backend/package-lock.json') }}
+
+      - name: Install frontend dependencies
+        if: (matrix.check == 'lint' || matrix.check == 'build') && steps.frontend-cache.outputs.cache-hit != 'true'
+        run: npm ci --prefix poshanai-frontend
+
+      - name: Install backend dependencies
+        if: matrix.check == 'test' && steps.backend-cache.outputs.cache-hit != 'true'
+        run: npm ci --prefix poshanai-backend
+
+      - name: Run ESLint
+        if: matrix.check == 'lint'
+        run: npm run lint --prefix poshanai-frontend
+
+      - name: Check formatting
+        if: matrix.check == 'lint'
+        run: npx --prefix poshanai-frontend prettier --check README.md poshanai-frontend/package.json poshanai-backend/package.json .github
+
+      - name: Run backend tests with mongodb-memory-server
+        if: matrix.check == 'test'
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/poshanai_test
+          JWT_ACCESS_SECRET: ci-access-secret-that-is-long-enough-123
+          JWT_REFRESH_SECRET: ci-refresh-secret-that-is-long-enough-456
+          STORAGE_TYPE: local
+        run: npm test --prefix poshanai-backend
+
+      - name: Build frontend
+        if: matrix.check == 'build'
+        run: npm run build --prefix poshanai-frontend
+
+      - name: Set up Node.js for dependency audit
+        if: matrix.check == 'security'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            poshanai-backend/package-lock.json
+            poshanai-frontend/package-lock.json
+
+      - name: Audit backend production dependencies
+        if: matrix.check == 'security'
+        run: npm audit --prefix poshanai-backend --omit=dev --audit-level=high
+
+      - name: Audit frontend production dependencies
+        if: matrix.check == 'security'
+        run: npm audit --prefix poshanai-frontend --omit=dev --audit-level=high
+
+      - name: Build backend image (no push)
+        if: matrix.check == 'docker'
+        run: docker build --file poshanai-backend/Dockerfile --tag poshanai-backend:ci poshanai-backend
+
+      - name: Build frontend image (no push)
+        if: matrix.check == 'docker'
+        run: docker build --file poshanai-frontend/Dockerfile --tag poshanai-frontend:ci .

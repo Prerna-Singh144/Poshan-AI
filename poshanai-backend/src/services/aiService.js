@@ -4,10 +4,10 @@ import Report from '../models/Report.js';
 import User from '../models/User.js';
 import { env } from '../config/env.js';
 import {
-  buildMealPlanPrompt,
   getMedicalDisclaimer,
   retrieveFoodsForDeficiencies,
 } from '../rag/ragService.js';
+import { buildMealPlanPrompt, mealPlanSystemPrompt } from '../rag/promptBuilder.js';
 import logger from '../utils/logger.js';
 import httpError from '../utils/httpError.js';
 
@@ -17,6 +17,7 @@ const aiMealSchema = Joi.object({
   items: Joi.array()
     .items(Joi.object({
       ifctCode: Joi.string().trim().max(12).required(),
+      foodName: Joi.string().trim().max(200).required(),
       quantityGrams: Joi.number().min(1).max(2000).required(),
     }).unknown(false))
     .min(1)
@@ -40,6 +41,7 @@ const aiResponseSchema = Joi.object({
       return meals;
     })
     .required(),
+  disclaimer: Joi.string().required(),
 }).unknown(false);
 
 function parseMealPlanResponse(text) {
@@ -88,7 +90,7 @@ async function requestOmniRoute(prompt) {
         messages: [
           {
             role: 'system',
-            content: 'You are a nutrition-awareness assistant. Return only valid JSON matching the requested format. Do not diagnose, prescribe, or claim to treat disease.',
+            content: mealPlanSystemPrompt,
           },
           { role: 'user', content: prompt },
         ],
@@ -126,9 +128,9 @@ function buildStoredMeals(generatedMeals, foodByCode) {
   return generatedMeals.map(({ day, mealType, items }) => ({
     day,
     mealType,
-    items: items.map(({ ifctCode, quantityGrams }) => {
+    items: items.map(({ ifctCode, foodName, quantityGrams }) => {
       const food = foodByCode.get(ifctCode);
-      if (!food) {
+      if (!food || food.foodName !== foodName) {
         throw httpError(502, 'AI_RESPONSE_INVALID', 'OmniRoute selected an IFCT food that was not provided.');
       }
 
@@ -156,6 +158,9 @@ export async function generateMealPlan(userId, reportId, preferences = {}) {
   if (!report) throw httpError(404, 'REPORT_NOT_FOUND', 'Report not found.');
   if (report.ocrStatus !== 'completed') {
     throw httpError(409, 'REPORT_NOT_READY', 'The report must finish processing before generating a meal plan.');
+  }
+  if (!['confirmed', 'corrected'].includes(report.reviewStatus)) {
+    throw httpError(409, 'REPORT_REVIEW_REQUIRED', 'Confirm or correct the extracted report values before generating a meal plan.');
   }
 
   const deficiencies = report.extractedValues

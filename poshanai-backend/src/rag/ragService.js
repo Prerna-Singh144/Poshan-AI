@@ -1,129 +1,22 @@
-// IFCT 2017 composition values per 100 g edible portion from ICMR-NIN:
-// https://www.nin.res.in/ebooks/IFCT2017.pdf. Energy is converted from kJ to kcal,
-// mineral values from g to mg, and vitamin D from g to micrograms. IFCT 2017
-// does not provide vitamin B12 values; those entries intentionally remain null.
-const foodRecords = [
-  {
-    ifctCode: 'A015',
-    foodName: 'Rice, raw, milled',
-    regionCode: 6,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 356.36, protein: 7.94, carbs: 78.24, fat: 0.52, iron: 0.65, calcium: 7.49, vitaminD: 0, vitaminB12: null },
-  },
-  {
-    ifctCode: 'B013',
-    foodName: 'Lentil, dal',
-    regionCode: 6,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: ['legumes'],
-    nutrients: { calories: 322.42, protein: 24.35, carbs: 52.53, fat: 0.75, iron: 7.06, calcium: 44.32, vitaminD: 1.31, vitaminB12: null },
-  },
-  {
-    ifctCode: 'B023',
-    foodName: 'Ricebean',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: ['legumes'],
-    nutrients: { calories: 302.34, protein: 19.97, carbs: 51.26, fat: 0.74, iron: 4.76, calcium: 200, vitaminD: 8.26, vitaminB12: null },
-  },
-  {
-    ifctCode: 'C003',
-    foodName: 'Amaranth leaves, red',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 33.46, protein: 3.93, carbs: 2.37, fat: 0.63, iron: 7.25, calcium: 245, vitaminD: 15.1, vitaminB12: null },
-  },
-  {
-    ifctCode: 'C033',
-    foodName: 'Spinach',
-    regionCode: 6,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 24.38, protein: 2.14, carbs: 2.05, fat: 0.64, iron: 2.95, calcium: 82.29, vitaminD: 0.26, vitaminB12: null },
-  },
-  {
-    ifctCode: 'D009',
-    foodName: 'Bottle gourd, elongate, dark green',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 12.91, protein: 0.49, carbs: 2.25, fat: 0.13, iron: 0.34, calcium: 16.64, vitaminD: 0.6, vitaminB12: null },
-  },
-  {
-    ifctCode: 'D065',
-    foodName: 'Pumpkin, green, cylindrical',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 24.62, protein: 0.87, carbs: 4.22, fat: 0.18, iron: 0.29, calcium: 24.1, vitaminD: 1.07, vitaminB12: null },
-  },
-  {
-    ifctCode: 'E009',
-    foodName: 'Banana, ripe, montham',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 110.66, protein: 1.25, carbs: 24.95, fat: 0.32, iron: 0.4, calcium: 6.77, vitaminD: 0.2, vitaminB12: null },
-  },
-  {
-    ifctCode: 'F007',
-    foodName: 'Potato, brown skin, small',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 60.95, protein: 1.35, carbs: 12.9, fat: 0.22, iron: 0.53, calcium: 8.53, vitaminD: 0.22, vitaminB12: null },
-  },
-  {
-    ifctCode: 'F011',
-    foodName: 'Radish, round, red skin',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: [],
-    nutrients: { calories: 31.07, protein: 0.89, carbs: 6.07, fat: 0.16, iron: 0.42, calcium: 35.76, vitaminD: 0.05, vitaminB12: null },
-  },
-  {
-    ifctCode: 'J001',
-    foodName: 'Button mushroom, fresh',
-    regionCode: 1,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: ['mushrooms'],
-    nutrients: { calories: 27.49, protein: 3.68, carbs: 1.98, fat: 0.42, iron: 0.29, calcium: 18.38, vitaminD: 20.54, vitaminB12: null },
-  },
-  {
-    ifctCode: 'L002',
-    foodName: 'Milk, whole, Cow',
-    regionCode: 6,
-    dietTags: ['veg', 'eggetarian', 'fishetarian'],
-    allergens: ['dairy'],
-    nutrients: { calories: 72.9, protein: 3.26, carbs: 4.94, fat: 4.48, iron: 0.15, calcium: 118, vitaminD: 1.22, vitaminB12: null },
-  },
-  {
-    ifctCode: 'M009',
-    foodName: 'Egg, country hen, whole, boiled',
-    regionCode: 1,
-    dietTags: ['eggetarian', 'fishetarian'],
-    allergens: ['eggs'],
-    nutrients: { calories: 183.32, protein: 14.43, carbs: 0, fat: 14.1, iron: 1.73, calcium: 57.79, vitaminD: 2.99, vitaminB12: null },
-  },
-  {
-    ifctCode: 'N005',
-    foodName: 'Poultry, chicken, liver',
-    regionCode: 1,
-    dietTags: ['nonveg'],
-    allergens: ['poultry'],
-    nutrients: { calories: 123.8, protein: 21.57, carbs: 0, fat: 4.08, iron: 9.92, calcium: 4.1, vitaminD: 2.64, vitaminB12: null },
-  },
-  {
-    ifctCode: 'P004',
-    foodName: 'Ari fish',
-    regionCode: 1,
-    dietTags: ['fishetarian', 'nonveg'],
-    allergens: ['fish'],
-    nutrients: { calories: 99.19, protein: 22.01, carbs: 0, fat: 1.11, iron: 0.47, calcium: 4.36, vitaminD: 1.04, vitaminB12: null },
-  },
-];
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import logger from '../utils/logger.js';
+import { buildMealPlanPrompt } from './promptBuilder.js';
+
+export { buildMealPlanPrompt };
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const datasetPath = path.resolve(__dirname, '../../data/ifct_2017.json');
+
+let foodRecords = [];
+try {
+  foodRecords = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+  logger.info(`Loaded ${foodRecords.length} IFCT foods from dataset`);
+} catch (error) {
+  logger.error('Failed to load IFCT dataset from data/ifct_2017.json', error);
+}
 
 const regionCodes = new Map();
 const regionsByState = {
@@ -150,6 +43,14 @@ const nutrientByDeficiency = {
   Hemoglobin: 'iron',
 };
 
+const rdaNorm = {
+  vitaminD: 15,
+  iron: 17,
+  calcium: 1000,
+  protein: 50,
+  vitaminB12: 2.2,
+};
+
 const allergyAliases = {
   nuts: ['nuts'],
   peanut: ['peanuts', 'nuts'],
@@ -170,9 +71,12 @@ const allergyAliases = {
   seeds: ['seeds'],
 };
 
-const round = (value) => Math.round(value * 100) / 100;
+const round = (value) => (value === null || value === undefined ? null : Math.round(Number(value) * 100) / 100);
 
-// TODO (Member 3): Replace this IFCT sample catalogue with live RAG retrieval.
+/**
+ * Retrieves and ranks top 20-30 IFCT 2017 foods for target nutrient deficiencies,
+ * filtered by user dietary preference, excluding allergens, and prioritizing regional foods.
+ */
 export function retrieveFoodsForDeficiencies(deficiencies = [], preferences = {}) {
   const dietType = preferences.dietType ?? 'veg';
   const excludedAllergens = new Set(
@@ -183,47 +87,67 @@ export function retrieveFoodsForDeficiencies(deficiencies = [], preferences = {}
     .map((deficiency) => nutrientByDeficiency[deficiency.nutrient])
     .filter(Boolean);
 
-  return foodRecords
-    .filter((food) => dietType === 'nonveg' || food.dietTags.includes(dietType))
-    .filter((food) => !food.allergens.some((allergen) => excludedAllergens.has(allergen)))
-    .filter((food) => !requestedRegion || food.regionCode === requestedRegion)
-    .sort((left, right) => {
-      const score = (food) => relevantNutrients.reduce(
-        (total, nutrient) => total + (food.nutrients[nutrient] > 0 ? 1 : 0),
-        0,
-      );
-      return score(right) - score(left) || left.ifctCode.localeCompare(right.ifctCode);
+  const filtered = foodRecords
+    .filter((food) => {
+      if (dietType === 'veg') return food.dietTags.includes('veg');
+      if (dietType === 'eggetarian') return food.dietTags.includes('eggetarian') || food.dietTags.includes('veg');
+      return true; // nonveg allows all foods
     })
-    .map(({ ifctCode, foodName, nutrients }) => ({
-      ifctCode,
-      foodName,
-      nutrients: Object.fromEntries(
-        Object.entries(nutrients).map(([name, value]) => [name, value === null ? null : round(value)]),
-      ),
-      servingSize: 100,
-    }));
+    .filter((food) => !food.allergens.some((allergen) => excludedAllergens.has(allergen)));
+
+  // Rank foods by nutrient density for target deficiencies with regional prioritization
+  const scored = filtered.map((food) => {
+    let nutrientScore = 0;
+    if (relevantNutrients.length > 0) {
+      for (const nutrient of relevantNutrients) {
+        const val = food.nutrients[nutrient] ?? 0;
+        const norm = rdaNorm[nutrient] ?? 1;
+        nutrientScore += (val / norm);
+      }
+    } else {
+      // General nutrient density fallback
+      nutrientScore =
+        ((food.nutrients.protein ?? 0) / rdaNorm.protein) +
+        ((food.nutrients.iron ?? 0) / rdaNorm.iron) +
+        ((food.nutrients.calcium ?? 0) / rdaNorm.calcium) +
+        ((food.nutrients.vitaminD ?? 0) / rdaNorm.vitaminD);
+    }
+
+    let regionMultiplier = 1.0;
+    if (requestedRegion) {
+      if (food.regionCode === requestedRegion) regionMultiplier = 1.35;
+      else if (food.regionCode === 6) regionMultiplier = 1.0;
+      else regionMultiplier = 0.85;
+    }
+
+    return {
+      food,
+      finalScore: nutrientScore * regionMultiplier,
+    };
+  });
+
+  scored.sort((a, b) => b.finalScore - a.finalScore || a.food.ifctCode.localeCompare(b.food.ifctCode));
+
+  const limit = Math.max(20, Math.min(30, preferences.limit ?? 25));
+
+  return scored.slice(0, limit).map(({ food }) => ({
+    ifctCode: food.ifctCode,
+    foodName: food.foodName,
+    category: food.category,
+    nutrients: Object.fromEntries(
+      Object.entries(food.nutrients).map(([name, value]) => [name, value === null ? null : round(value)]),
+    ),
+    servingSize: 100,
+  }));
 }
 
-// TODO (Member 3): Replace this stub-backed provider when the real RAG service is integrated.
 export function getMedicalDisclaimer() {
   return 'PoshanAI provides nutrition awareness and suggestions. It does not diagnose, treat, or replace advice from a qualified healthcare professional.';
 }
 
-// TODO (Member 3): Replace this prompt builder with production RAG prompt construction.
-export function buildMealPlanPrompt(userProfile, deficiencies, retrievedFoods) {
-  return [
-    'Create a practical 7-day Indian meal plan using only the supplied IFCT food records and the user preferences.',
-    'Return only a JSON object shaped as {"meals":[{"day":1,"mealType":"breakfast","items":[{"ifctCode":"A015","quantityGrams":100}]}]}.',
-    'Include at least one meal for each day from 1 through 7. Use realistic portions and vary meals where possible.',
-    'Do not include food names or nutrient amounts in the response. The server resolves each IFCT code and computes the portion nutrients.',
-    'Do not invent foods or IFCT codes; every ifctCode must be copied from the supplied records.',
-    'Vitamin B12 is unavailable in some IFCT records and must not be inferred or fabricated.',
-    'Do not diagnose, treat, or claim that foods will correct a laboratory result. Do not recommend supplements or medication.',
-    'Sanitized user preferences:',
-    JSON.stringify(userProfile),
-    'Reported below-reference markers (informational only):',
-    JSON.stringify(deficiencies),
-    'Retrieved IFCT foods (nutrients per 100 g; null means not reported):',
-    JSON.stringify(retrievedFoods),
-  ].join('\n');
-}
+export default {
+  retrieveFoodsForDeficiencies,
+  getMedicalDisclaimer,
+  buildMealPlanPrompt,
+  supportedRegions,
+};

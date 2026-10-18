@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Skeleton } from '../components/common/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { useCachedFetch } from '../hooks/useCachedFetch.js';
+import { getReport, reviewReport } from '../api/reportApi.js'; // Added for Report Review
 
 const REPORTS_URL = '/reports?page=1&limit=50';
 const MEAL_PLANS_URL = '/mealplans?page=1&limit=100';
@@ -46,9 +48,7 @@ function RequestError({ title, message, onRetry }) {
 }
 
 function retryRequest(refetch) {
-  refetch().catch(() => {
-    // The hook retains the request error and the page renders it in the relevant section.
-  });
+  refetch().catch(() => {});
 }
 
 function StatCard({ label, value, detail, loading }) {
@@ -70,10 +70,7 @@ function ProfileSummary({ user }) {
     <Card as="section" aria-labelledby="profile-summary-title" className="h-full">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2
-            id="profile-summary-title"
-            className="text-lg font-semibold text-slate-900 dark:text-white"
-          >
+          <h2 id="profile-summary-title" className="text-lg font-semibold text-slate-900 dark:text-white">
             Profile
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -121,10 +118,7 @@ function ReportList({ reports, isLoading, error, onRetry }) {
     <Card as="section" aria-labelledby="recent-reports-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2
-            id="recent-reports-title"
-            className="text-lg font-semibold text-slate-900 dark:text-white"
-          >
+          <h2 id="recent-reports-title" className="text-lg font-semibold text-slate-900 dark:text-white">
             Recent reports
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -175,10 +169,7 @@ function ReportList({ reports, isLoading, error, onRetry }) {
             const id = getId(report);
             const status = report.ocrStatus || 'status unavailable';
             return (
-              <li
-                key={id || `${report.uploadedAt || 'report'}-${index}`}
-                className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
-              >
+              <li key={id || `${report.uploadedAt || 'report'}-${index}`} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
                 <div>
                   <p className="font-medium text-slate-900 dark:text-white">
                     Blood report · {formatDate(report.uploadedAt)}
@@ -219,19 +210,51 @@ export default function Dashboard() {
 
   const reports = getReports(reportData);
   const mealPlans = getMealPlans(mealPlanData);
-  const mealPlansFormatError =
-    !mealPlansLoading && !mealPlansError && mealPlans === null;
+  const mealPlansFormatError = !mealPlansLoading && !mealPlansError && mealPlans === null;
   const activeMealPlans = mealPlans?.filter((plan) => plan.status === 'active') ?? [];
   const latestMealPlanId = mealPlans?.map(getId).find(Boolean);
   const hasMoreMealPlans = (mealPlanData?.pagination?.pages ?? 1) > 1;
 
+  // --- State for Report Review (from Member 2) ---
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [reviewError, setReviewError] = useState('');
+  const [savingReview, setSavingReview] = useState(false);
+
+  const handleOpenReport = async (report) => {
+    try {
+      const data = await getReport(report.id ?? report._id);
+      setSelectedReport(data.report ?? data);
+    } catch {
+      setReviewError('Could not load report values.');
+    }
+  };
+
+  const handleSubmitReview = async (reviewStatus) => {
+    setSavingReview(true);
+    try {
+      const data = await reviewReport(selectedReport.id || selectedReport._id, reviewStatus, selectedReport.extractedValues);
+      const reviewed = data.report ?? data;
+      setSelectedReport(reviewed);
+      refetchReports(); // Refresh list to show updated status
+    } catch {
+      setReviewError('Could not save report review.');
+    } finally {
+      setSavingReview(false);
+    }
+  };
+
+  const handleInputChange = (index, newValue) => {
+    setSelectedReport((current) => ({
+      ...current,
+      extractedValues: current.extractedValues.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, value: Number(newValue) } : item
+      ),
+    }));
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <motion.header
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
+      <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <p className="text-sm font-semibold uppercase tracking-wide text-leaf dark:text-emerald-300">
           Your nutrition workspace
         </p>
@@ -253,21 +276,14 @@ export default function Dashboard() {
         {mealPlansError || mealPlansFormatError ? (
           <RequestError
             title="Meal-plan data unavailable"
-            message={
-              mealPlansError?.message ||
-              'The meal-plans service returned data in an unexpected format.'
-            }
+            message={mealPlansError?.message || 'The meal-plans service returned data in an unexpected format.'}
             onRetry={() => retryRequest(refetchMealPlans)}
           />
         ) : (
           <StatCard
             label="Active meal plans"
             value={mealPlansLoading ? null : mealPlans ? activeMealPlans.length : '—'}
-            detail={
-              hasMoreMealPlans
-                ? 'Active plans on the first page; additional plans exist.'
-                : 'Plans currently marked active.'
-            }
+            detail={hasMoreMealPlans ? 'Active plans on the first page; additional plans exist.' : 'Plans currently marked active.'}
             loading={mealPlansLoading}
           />
         )}
@@ -275,76 +291,84 @@ export default function Dashboard() {
 
       <section aria-label="Profile and reports" className="grid gap-5 lg:grid-cols-2">
         <ProfileSummary user={user} />
-        <ReportList
-          reports={reports}
-          isLoading={reportsLoading}
-          error={reportsError}
-          onRetry={() => retryRequest(refetchReports)}
-        />
+        <ReportList reports={reports} isLoading={reportsLoading} error={reportsError} onRetry={() => retryRequest(refetchReports)} />
+      </section>
+
+      {/* --- Report Review Section (Integrated from Member 2) --- */}
+      <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Report review</h2>
+        <p className="mt-1 text-sm text-slate-500">Confirm extracted lab values before generating a meal plan.</p>
+        {reviewError && <p role="alert" className="mt-3 text-sm text-red-600">{reviewError}</p>}
+        
+        {reports && reports.filter((r) => r.ocrStatus === 'completed').length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {reports.filter((report) => report.ocrStatus === 'completed').map((report) => (
+              <li key={report.id ?? report._id} className="flex items-center justify-between gap-3 rounded border p-3 dark:border-slate-700">
+                <span className="text-slate-700 dark:text-slate-300">Report · {report.reviewStatus ?? 'pending review'}</span>
+                <button className="text-leaf underline" onClick={() => handleOpenReport(report)}>Review values</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-4 text-sm text-slate-500">No completed reports available for review.</p>
+        )}
+
+        {selectedReport && (
+          <div className="mt-6 space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-900 dark:text-white">Extracted values</h3>
+            {selectedReport.extractedValues?.map((value, index) => (
+              <label key={`${value.nutrient}-${index}`} className="grid gap-1 text-sm text-slate-700 dark:text-slate-300">
+                {value.nutrient} ({value.unit ?? 'unit unavailable'})
+                <input
+                  type="number"
+                  step="any"
+                  value={value.value}
+                  onChange={(event) => handleInputChange(index, event.target.value)}
+                  className="rounded border p-2 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                />
+              </label>
+            ))}
+            <div className="flex gap-3 mt-4">
+              <button disabled={savingReview} className="rounded bg-leaf px-4 py-2 text-white disabled:opacity-50" onClick={() => handleSubmitReview('confirmed')}>
+                {savingReview ? 'Saving...' : 'Confirm values'}
+              </button>
+              <button disabled={savingReview} className="rounded border px-4 py-2 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300" onClick={() => handleSubmitReview('corrected')}>
+                Save corrections
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="quick-actions-title">
-        <h2 id="quick-actions-title" className="text-xl font-semibold text-slate-900 dark:text-white">
-          Quick actions
-        </h2>
+        <h2 id="quick-actions-title" className="text-xl font-semibold text-slate-900 dark:text-white">Quick actions</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Card as="article" className="h-full">
             <h3 className="font-semibold text-slate-900 dark:text-white">Upload a report</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Add a PDF or image report to your account.
-            </p>
-            <Button as={Link} to="/upload" className="mt-4" size="sm">
-              Upload report
-            </Button>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Add a PDF or image report to your account.</p>
+            <Button as={Link} to="/upload" className="mt-4" size="sm">Upload report</Button>
           </Card>
 
           <Card as="article" className="h-full">
             <h3 className="font-semibold text-slate-900 dark:text-white">View meal plans</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              {latestMealPlanId
-                ? 'Open your latest meal plan.'
-                : mealPlansFormatError
-                  ? 'Meal-plan data could not be loaded. Use retry above.'
-                  : mealPlansError
-                    ? 'Meal plans are temporarily unavailable. Use retry above.'
-                : 'No meal plan is available yet. Upload a report to get started.'}
+              {latestMealPlanId ? 'Open your latest meal plan.' : 'No meal plan is available yet. Upload a report to get started.'}
             </p>
-            <Button
-              onClick={() =>
-                navigate(
-                  latestMealPlanId
-                    ? `/meal-plan/${encodeURIComponent(latestMealPlanId)}`
-                    : '/upload',
-                )
-              }
-              className="mt-4"
-              size="sm"
-              variant="secondary"
-            >
+            <Button onClick={() => navigate(latestMealPlanId ? `/meal-plan/${encodeURIComponent(latestMealPlanId)}` : '/upload')} className="mt-4" size="sm" variant="secondary">
               {latestMealPlanId ? 'View latest plan' : 'Upload a report'}
             </Button>
           </Card>
 
           <Card as="article" className="h-full">
             <h3 className="font-semibold text-slate-900 dark:text-white">Complete your profile</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Review your account details and profile options.
-            </p>
-            <Button
-              className="mt-4"
-              size="sm"
-              variant="secondary"
-              onClick={() => navigate('/profile')}
-            >
-              View profile
-            </Button>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Review your account details and profile options.</p>
+            <Button className="mt-4" size="sm" variant="secondary" onClick={() => navigate('/profile')}>View profile</Button>
           </Card>
         </div>
       </section>
 
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-        PoshanAI provides nutrition awareness and food suggestions. It does not diagnose or replace
-        advice from a qualified healthcare professional.
+        PoshanAI provides nutrition awareness and food suggestions. It does not diagnose or replace advice from a qualified healthcare professional.
       </p>
     </div>
   );
