@@ -61,6 +61,7 @@ Protected endpoints require `Authorization: Bearer <accessToken>` unless noted o
 | `POST`   | `/api/auth/login`           | Public         | Log in and receive an access token plus refresh cookie.                    |
 | `POST`   | `/api/auth/refresh`         | Refresh cookie | Rotate the refresh session and receive a new access token.                 |
 | `POST`   | `/api/auth/logout`          | Refresh cookie | End the current refresh session.                                           |
+| `GET`    | `/api/calories/maintenance` | Bearer         | Calculate BMR, maintenance calories, and estimated macros from the caller's profile. |
 | `POST`   | `/api/reports/upload`       | Bearer         | Upload a PDF, JPEG, or PNG for OCR. `POST /api/reports` is also supported. |
 | `GET`    | `/api/reports`              | Bearer         | List the caller's reports.                                                 |
 | `GET`    | `/api/reports/:id`          | Bearer         | Read an owned report and OCR results.                                      |
@@ -69,6 +70,13 @@ Protected endpoints require `Authorization: Bearer <accessToken>` unless noted o
 | `GET`    | `/api/mealplans`            | Bearer         | List the caller's meal plans.                                              |
 | `GET`    | `/api/mealplans/:id`        | Bearer         | Read an owned meal plan.                                                   |
 | `PATCH`  | `/api/mealplans/:id/status` | Bearer         | Set an owned plan to `active` or `completed`.                              |
+| `POST`   | `/api/logs/add-food`        | Bearer         | Add an IFCT food portion to today's log.                                   |
+| `GET`    | `/api/logs/today`           | Bearer         | Read today's food entries, nutrient totals, and calorie target comparison. |
+| `DELETE` | `/api/logs/:logId`          | Bearer         | Remove one owned food entry by its embedded entry ID.                      |
+
+`GET /api/calories/maintenance` requires `age`, `gender` (`male` or `female`), `weightKg`, `heightCm`, and `activityLevel` in the authenticated user's profile. `targetCalories` is the maintenance estimate (TDEE). Macro estimates use a 20% protein, 50% carbohydrate, and 30% fat energy split, converted using 4/4/9 kcal per gram.
+
+`POST /api/logs/add-food` accepts `mealType`, `ifctCode`, and `quantityGrams`; macros are scaled from the IFCT per-100-g values. `GET /api/logs/today` returns the UTC date, food entries, nutrient totals, and a `calorieComparison` with consumed, target, and remaining calories. The target is `null` until the user profile has the fields required by the calorie calculator. `DELETE /api/logs/:logId` takes the food entry's embedded `_id` returned by the add-food endpoint.
 
 ## Production Compose
 

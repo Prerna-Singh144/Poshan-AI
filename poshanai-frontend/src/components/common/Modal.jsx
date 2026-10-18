@@ -74,7 +74,7 @@ export default function Modal({ isOpen, onClose, title, children, className = ''
                 type="button"
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="rounded-md px-2 py-1 text-xl leading-none text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-xl leading-none text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 ×
               </button>

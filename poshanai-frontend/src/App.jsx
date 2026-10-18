@@ -9,6 +9,8 @@ import Register from './pages/Register.jsx';
 import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import MealPlanView from './pages/MealPlanView.jsx';
+import Onboarding from './pages/Onboarding.jsx';
+import Recommendations from './pages/Recommendations.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 
@@ -25,6 +27,8 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/upload" element={<UploadReport />} />
             <Route path="/meal-plan/:id" element={<MealPlanView />} />

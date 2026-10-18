@@ -8,6 +8,15 @@ const router = Router();
 
 const updateProfileSchema = Joi.object({
   name: Joi.string().trim().min(2).max(80).optional(),
+  profile: Joi.object({
+    age: Joi.number().min(13).max(100).optional(),
+    gender: Joi.string().valid('male', 'female', 'other').optional(),
+    weightKg: Joi.number().min(20).max(200).optional(),
+    heightCm: Joi.number().min(100).max(250).optional(),
+    activityLevel: Joi.string().valid('sedentary', 'moderate', 'active').optional(),
+    dietType: Joi.string().valid('veg', 'non-veg', 'vegan', 'eggetarian').optional(),
+    region: Joi.string().trim().max(80).optional(),
+  }).min(1).unknown(false).optional(),
   consent: Joi.alternatives()
     .try(
       Joi.boolean(),

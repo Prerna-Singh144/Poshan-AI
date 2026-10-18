@@ -5,6 +5,7 @@ import { Button, Card, Skeleton } from '../components/common/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { useCachedFetch } from '../hooks/useCachedFetch.js';
 import { getReport, reviewReport } from '../api/reportApi.js'; // Added for Report Review
+import CalorieTracker from '../components/dashboard/CalorieTracker.jsx';
 
 const REPORTS_URL = '/reports?page=1&limit=50';
 const MEAL_PLANS_URL = '/mealplans?page=1&limit=100';
@@ -102,11 +103,55 @@ function ProfileSummary({ user }) {
             {user?.email || 'Email unavailable'}
           </dd>
         </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Age
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900 dark:text-white">
+            {user?.profile?.age ?? 'Not provided'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Gender
+          </dt>
+          <dd className="mt-1 capitalize font-medium text-slate-900 dark:text-white">
+            {user?.profile?.gender || 'Not provided'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Weight
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900 dark:text-white">
+            {user?.profile?.weightKg ? `${user.profile.weightKg} kg` : 'Not provided'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Height
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900 dark:text-white">
+            {user?.profile?.heightCm ? `${user.profile.heightCm} cm` : 'Not provided'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Diet type
+          </dt>
+          <dd className="mt-1 capitalize font-medium text-slate-900 dark:text-white">
+            {user?.profile?.dietType || 'Not provided'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Region
+          </dt>
+          <dd className="mt-1 font-medium text-slate-900 dark:text-white">
+            {user?.profile?.region || 'Not provided'}
+          </dd>
+        </div>
       </dl>
-
-      <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
-        Age, weight, height, and diet preferences will appear here when profile storage is available.
-      </p>
     </Card>
   );
 }
@@ -288,6 +333,8 @@ export default function Dashboard() {
           />
         )}
       </section>
+
+      <CalorieTracker />
 
       <section aria-label="Profile and reports" className="grid gap-5 lg:grid-cols-2">
         <ProfileSummary user={user} />
