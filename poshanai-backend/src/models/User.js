@@ -12,11 +12,24 @@ const refreshTokenSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const profileSchema = new mongoose.Schema(
+  {
+    age: { type: Number },
+    gender: { type: String, enum: ['male', 'female', 'other'] },
+    weightKg: { type: Number },
+    heightCm: { type: Number },
+    dietType: { type: String, enum: ['veg', 'non-veg', 'vegan', 'eggetarian'] },
+    region: { type: String },
+  },
+  { _id: false },
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 80 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     passwordHash: { type: String, required: true, select: false },
+    profile: { type: profileSchema, default: undefined },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
     refreshTokens: { type: [refreshTokenSchema], default: [], select: false },
     uploadCount: { type: Number, default: 0, min: 0 },

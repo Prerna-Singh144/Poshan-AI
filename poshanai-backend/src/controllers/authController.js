@@ -114,6 +114,14 @@ export const register = asyncHandler(async (req, res) => {
   const user = new User({
     name: req.body.name,
     email,
+    profile: {
+      age: req.body.age,
+      gender: req.body.gender,
+      weightKg: req.body.weightKg,
+      heightCm: req.body.heightCm,
+      dietType: req.body.dietType,
+      region: req.body.region,
+    },
     consent: {
       given: true,
       givenAt: new Date(),
