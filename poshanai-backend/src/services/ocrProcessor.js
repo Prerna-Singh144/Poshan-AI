@@ -25,26 +25,31 @@ export async function processReportOcr(reportId) {
   } finally {
     await cleanupDownloadedFile(filePath);
   }
-  await Report.updateOne(
-    { _id: report._id, ocrStatus: 'processing', processingStartedAt },
-    {
-      $set: {
-        ocrStatus: 'completed',
-        reviewStatus: 'pending',
-        rawOcrText: result.rawText,
-        extractedValues: result.extractedValues.map((value) => {
-          const normalized = normalizeBiomarkerValue(value.nutrient, value.value, value.unit);
-          return {
-            ...value,
-            normalizedValue: normalized.value,
-            normalizedUnit: normalized.unit,
-          };
-        }),
-        processedAt: new Date(),
-        processingStartedAt: null,
-        ocrError: null,
-      },
-    },
-  );
-  return Report.findById(report._id);
+  // Hydrate the current document and save through Mongoose middleware. The
+  // encryption plugin only encrypts rawOcrText on document save; updateOne()
+  // bypasses that middleware and can leave stale ciphertext or plaintext.
+  const completedReport = await Report.findOne({
+    _id: report._id,
+    ocrStatus: 'processing',
+    processingStartedAt,
+  });
+  if (!completedReport) return;
+
+  completedReport.ocrStatus = 'completed';
+  completedReport.reviewStatus = 'pending';
+  completedReport.rawOcrText = result.rawText;
+  completedReport.extractedValues = result.extractedValues.map((value) => {
+    const normalized = normalizeBiomarkerValue(value.nutrient, value.value, value.unit);
+    return {
+      ...value,
+      normalizedValue: normalized.value,
+      normalizedUnit: normalized.unit,
+    };
+  });
+  completedReport.processedAt = new Date();
+  completedReport.processingStartedAt = null;
+  completedReport.ocrError = null;
+
+  await completedReport.save();
+  return completedReport;
 }
