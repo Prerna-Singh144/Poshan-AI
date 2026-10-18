@@ -35,8 +35,13 @@ function mockAiCompletion() {
     meals: Array.from({ length: 7 }, (_, index) => ({
       day: index + 1,
       mealType: 'breakfast',
-      items: [{ ifctCode: chosenCode, quantityGrams: 100 }],
+      items: [{
+        ifctCode: chosenCode,
+        foodName: foods.find((food) => food.ifctCode === chosenCode)?.foodName,
+        quantityGrams: 100,
+      }],
     })),
+    disclaimer: 'This is nutrition information to discuss with a qualified professional.',
   };
 }
 

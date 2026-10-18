@@ -12,9 +12,12 @@ import {
 import Report from '../models/Report.js';
 import { processReportOcr } from '../services/ocrProcessor.js';
 import logger from '../utils/logger.js';
-import { OCR_SETTINGS } from '../config/constants.js';
+import { OCR_SETTINGS, RETEST_REMINDER_SETTINGS } from '../config/constants.js';
+import { closeRetestReminderQueue, scheduleRetestReminderSweep } from './retestReminderQueue.js';
+import { runRetestReminderSweep } from '../services/retestReminderService.js';
 
 let worker;
+let retestReminderWorker;
 let sweepTimer;
 let sweepInProgress = false;
 
@@ -75,6 +78,7 @@ async function startWorker() {
   if (!env.redisUrl) throw new Error('REDIS_URL must be configured to run the OCR worker.');
   await connectDB();
   getReportQueue();
+  await scheduleRetestReminderSweep();
   worker = new Worker(queueName, processReportOcr, {
     connection: redisConnection(null),
     concurrency: OCR_SETTINGS.workerConcurrency,
@@ -90,6 +94,17 @@ async function startWorker() {
   });
   worker.on('error', () => logger.error('The OCR worker encountered a Redis or processing error.'));
 
+  retestReminderWorker = new Worker(
+    RETEST_REMINDER_SETTINGS.queueName,
+    async (job) => {
+      if (job.name !== 'check-retest-reminders') throw new Error('Unknown retest reminder job.');
+      return runRetestReminderSweep();
+    },
+    { connection: redisConnection(null), concurrency: 1 },
+  );
+  retestReminderWorker.on('failed', () => logger.error('The retest reminder sweep failed.'));
+  retestReminderWorker.on('error', () => logger.error('The retest reminder worker encountered a Redis or processing error.'));
+
   await sweepStaleReports();
   sweepTimer = setInterval(() => {
     void sweepStaleReports().catch(() => {
@@ -103,7 +118,8 @@ async function startWorker() {
 async function stopWorker() {
   if (sweepTimer) clearInterval(sweepTimer);
   await worker?.close();
-  await closeOcrQueue();
+  await retestReminderWorker?.close();
+  await Promise.all([closeOcrQueue(), closeRetestReminderQueue()]);
   await mongoose.disconnect();
 }
 

@@ -7,7 +7,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 const queueActual = await import('../src/jobs/queue.js');
 mock.module('../src/jobs/queue.js', {
-  exports: {
+  namedExports: {
     ...queueActual,
     enqueueReportOcr: async () => {},
   },

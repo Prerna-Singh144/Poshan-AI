@@ -38,6 +38,12 @@ export const OCR_SETTINGS = Object.freeze({
   sweepIntervalMs: 5 * 60 * 1000,
 });
 
+export const RETEST_REMINDER_SETTINGS = Object.freeze({
+  queueName: 'retest-reminders',
+  schedule: '0 9 * * *',
+  timezone: 'UTC',
+});
+
 export const COMPLIANCE_SETTINGS = Object.freeze({
   policyVersion: '1.0',
   reportRetentionDays: 365,

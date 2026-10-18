@@ -43,11 +43,13 @@ const reportSchema = new mongoose.Schema(
     uploadedAt: { type: Date, default: Date.now, required: true },
     processedAt: { type: Date, default: null },
     retentionWarningSentAt: { type: Date, default: null },
+    retestReminderSentAt: { type: Date, default: null },
   },
   { versionKey: false },
 );
 
 reportSchema.index({ userId: 1, uploadedAt: -1 });
+reportSchema.index({ ocrStatus: 1, uploadedAt: 1, retestReminderSentAt: 1 });
 
 reportSchema.plugin(encrypt, {
   encryptionKey: env.encryptionKey,
