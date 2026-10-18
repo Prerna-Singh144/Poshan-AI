@@ -37,15 +37,25 @@ const registerSchema = z
       .max(128, 'Password must be 128 characters or fewer.'),
     confirmPassword: z.string().min(1, 'Please confirm your password.'),
     age: requiredNumber('Age', 13, 100, true),
-    gender: z.string().min(1, 'Please select your gender.'),
+    gender: z
+      .string()
+      .min(1, 'Please select your gender.')
+      .refine((value) => ['male', 'female', 'other'].includes(value), 'Select a valid gender.'),
     weightKg: requiredNumber('Weight', 20, 200),
     heightCm: requiredNumber('Height', 100, 250),
-    dietType: z.string().min(1, 'Please select your diet type.'),
+    dietType: z
+      .string()
+      .min(1, 'Please select your diet type.')
+      .refine(
+        (value) => ['veg', 'non-veg', 'vegan', 'eggetarian'].includes(value),
+        'Select a valid diet type.',
+      ),
     region: z
       .string()
       .trim()
       .min(2, 'Enter your region or state.')
       .max(100, 'Region must be 100 characters or fewer.'),
+    consent: z.boolean().refine((value) => value, 'Please accept the privacy consent to continue.'),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: 'Passwords do not match.',
@@ -107,14 +117,38 @@ export default function Register() {
       heightCm: '',
       dietType: '',
       region: '',
+      consent: false,
     },
   });
 
-  const onSubmit = async ({ name, email, password }) => {
+  const onSubmit = async (values) => {
     clearErrors('root.serverError');
 
     try {
-      const session = await createAccount({ name, email, password });
+      const {
+        name,
+        email,
+        password,
+        age,
+        gender,
+        weightKg,
+        heightCm,
+        dietType,
+        region,
+        consent,
+      } = values;
+      const session = await createAccount({
+        name,
+        email,
+        password,
+        age,
+        gender,
+        weightKg,
+        heightCm,
+        dietType,
+        region,
+        consent,
+      });
       if (!session.isAuthenticated) {
         setError('root.serverError', {
           type: 'server',
@@ -150,11 +184,6 @@ export default function Register() {
         </h1>
         <p className="mt-2 text-slate-600 dark:text-slate-300">
           Create an account and tell us a little about your nutrition preferences.
-        </p>
-
-        <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-          The current registration API saves your name, email, and password. Profile details entered
-          below are not saved yet because profile storage is not implemented.
         </p>
 
         <form
@@ -232,7 +261,6 @@ export default function Register() {
                 <option value="female">Female</option>
                 <option value="male">Male</option>
                 <option value="other">Other</option>
-                <option value="prefer-not-to-say">Prefer not to say</option>
               </SelectField>
               <Input
                 label="Weight (kg)"
@@ -267,6 +295,7 @@ export default function Register() {
                 <option value="veg">Vegetarian</option>
                 <option value="non-veg">Non-vegetarian</option>
                 <option value="vegan">Vegan</option>
+                <option value="eggetarian">Eggetarian</option>
               </SelectField>
               <Input
                 label="Region or state"
@@ -279,6 +308,22 @@ export default function Register() {
               />
             </div>
           </fieldset>
+
+          <label className="flex items-start gap-3 text-sm leading-6 text-slate-700 dark:text-slate-200">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-leaf focus:ring-leaf"
+              {...registerField('consent')}
+            />
+            <span>
+              I consent to PoshanAI saving my account and profile details to provide the service.
+              {errors.consent?.message && (
+                <span className="mt-1 block text-red-600 dark:text-red-400" role="alert">
+                  {errors.consent.message}
+                </span>
+              )}
+            </span>
+          </label>
 
           {errors.root?.serverError?.message && (
             <p

@@ -58,7 +58,7 @@
       "validation": "Joi"
     },
     "ai_layer": {
-      "status": "Reserved extension point; no active Python AI service is implemented.",
+      "status": "No Python AI service is implemented. The Express backend uses the configured OmniRoute chat-completions endpoint for food text parsing.",
       "planned_capabilities": [
         "OCR",
         "IFCT retrieval-augmented generation",
@@ -139,6 +139,9 @@
       "User model and register/login/refresh/logout routes with access-token and refresh-cookie handling.",
       "Frontend API client modules and Redux slices for users, reports, and meal plans.",
       "Indexed Report model and authenticated report upload/list/get/delete endpoints with ownership checks.",
+      "Authenticated food and supplement logging with daily calorie and micronutrient totals compared against project reference values.",
+      "Dashboard calorie tracker with IFCT food search, optimistic food logging, macro progress, and supplement/micronutrient progress.",
+      "Authenticated AI text-to-food parsing through the configured OmniRoute endpoint with IFCT code validation.",
       "UUID-named, signature-checked PDF/JPEG/PNG uploads with a 10 MB limit.",
       "Tesseract.js OCR with an optional Redis-backed BullMQ worker and synchronous fallback for PDF and image reports.",
       "Sample OCR parser/model tests and Postman instructions.",
@@ -235,6 +238,45 @@
         "path": "/api/auth/logout",
         "auth": "Refresh-token cookie",
         "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/logs/add-food",
+        "auth": "Access token",
+        "body": "mealType, ifctCode, and quantityGrams; macros and micronutrients are derived from IFCT.",
+        "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/logs/add-supplement",
+        "auth": "Access token",
+        "body": "supplementName and vitamins; vitaminD in IU, b12 in µg, iron and calcium in mg.",
+        "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/logs/ai-parse",
+        "auth": "Access token",
+        "body": "text, 3-2000 characters.",
+        "status": "Implemented; returns structured IFCT-coded food items without persisting them."
+      },
+      {
+        "method": "GET",
+        "path": "/api/logs/foods/search?q={query}",
+        "auth": "Access token",
+        "status": "Implemented; returns up to 20 IFCT food matches."
+      },
+      {
+        "method": "GET",
+        "path": "/api/logs/today",
+        "auth": "Access token",
+        "status": "Implemented; returns today's food/supplement logs, calories, micronutrient totals, and comparison to project reference values."
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/logs/{logId}",
+        "auth": "Access token",
+        "status": "Implemented; deletes an owned food log entry."
       }
     ],
     "frontend_expected_but_backend_placeholder": [
@@ -428,6 +470,17 @@
         "updatedAt": "Date, Mongoose timestamp."
       },
       "additional_schema_options": "Schema uses timestamps, versionKey false, and explicit mealplans collection."
+    },
+    "SupplementLog": {
+      "status": "Implemented in poshanai-backend/src/models/SupplementLog.js.",
+      "fields": {
+        "userId": "Required ObjectId reference to User.",
+        "date": "Required YYYY-MM-DD string; assigned by the server.",
+        "supplementName": "Required string, 1-120 characters.",
+        "vitamins": "vitaminD in IU, b12 in µg, iron in mg, and calcium in mg; each defaults to 0."
+      },
+      "timestamps": true,
+      "versionKey": false
     },
     "DeficiencyLog": {
       "status": "Planned; no backend model implemented.",

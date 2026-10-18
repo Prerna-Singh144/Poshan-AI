@@ -34,6 +34,7 @@ export const getProfile = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      profile: user.profile,
       consent: user.consent,
       status: user.status,
       deletedAt: user.deletedAt,
@@ -49,6 +50,9 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   if (req.body.name) {
     user.name = req.body.name.trim();
+  }
+  if (req.body.profile) {
+    user.profile = { ...(user.profile?.toObject() ?? {}), ...req.body.profile };
   }
 
   const policyVersionChanged = user.consent?.version !== COMPLIANCE_SETTINGS.policyVersion;
@@ -87,6 +91,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
+      profile: user.profile,
       consent: user.consent,
       status: user.status,
     },
