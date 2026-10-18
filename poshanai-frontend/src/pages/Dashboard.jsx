@@ -298,7 +298,12 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <motion.div
+      className="mx-auto max-w-6xl space-y-8"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+    >
       <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <p className="text-sm font-semibold uppercase tracking-wide text-leaf dark:text-emerald-300">
           Your nutrition workspace
@@ -417,6 +422,6 @@ export default function Dashboard() {
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
         PoshanAI provides nutrition awareness and food suggestions. It does not diagnose or replace advice from a qualified healthcare professional.
       </p>
-    </div>
+    </motion.div>
   );
 }

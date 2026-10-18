@@ -1,0 +1,17 @@
+[
+  { "id": "whey-protein", "name": "Whey Protein", "category": "Performance", "defaultDosage": 30, "unit": "g" },
+  { "id": "creatine-monohydrate", "name": "Creatine Monohydrate", "category": "Performance", "defaultDosage": 5, "unit": "g" },
+  { "id": "pre-workout", "name": "Pre-workout", "category": "Performance", "defaultDosage": 1, "unit": "serving" },
+  { "id": "bcaa", "name": "BCAA", "category": "Performance", "defaultDosage": 5, "unit": "g" },
+  { "id": "mass-gainer", "name": "Mass Gainer", "category": "Performance", "defaultDosage": 100, "unit": "g" },
+  { "id": "multivitamin", "name": "Multivitamin", "category": "Vitamins/Minerals", "defaultDosage": 1, "unit": "tablet" },
+  { "id": "vitamin-d3", "name": "Vitamin D3", "category": "Vitamins/Minerals", "defaultDosage": 1000, "unit": "IU", "vitaminKey": "vitaminD" },
+  { "id": "vitamin-b12", "name": "Vitamin B12", "category": "Vitamins/Minerals", "defaultDosage": 1000, "unit": "mcg", "vitaminKey": "b12" },
+  { "id": "omega-3-fish-oil", "name": "Omega-3 (Fish Oil)", "category": "Vitamins/Minerals", "defaultDosage": 1000, "unit": "mg" },
+  { "id": "iron", "name": "Iron", "category": "Vitamins/Minerals", "defaultDosage": 18, "unit": "mg", "vitaminKey": "iron" },
+  { "id": "calcium", "name": "Calcium", "category": "Vitamins/Minerals", "defaultDosage": 500, "unit": "mg", "vitaminKey": "calcium" },
+  { "id": "magnesium", "name": "Magnesium", "category": "Vitamins/Minerals", "defaultDosage": 200, "unit": "mg" },
+  { "id": "zinc", "name": "Zinc", "category": "Vitamins/Minerals", "defaultDosage": 10, "unit": "mg" },
+  { "id": "ashwagandha", "name": "Ashwagandha", "category": "Indian Ayurvedic", "defaultDosage": 300, "unit": "mg" },
+  { "id": "shilajit", "name": "Shilajit", "category": "Indian Ayurvedic", "defaultDosage": 250, "unit": "mg" }
+]

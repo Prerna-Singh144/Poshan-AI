@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { animate } from 'framer-motion';
+import { Apple, Dumbbell, Flame, Pill, Utensils } from 'lucide-react';
 import client from '../../api/client.js';
 import {
   addFoodToLog,
   addSupplementToLog,
   getTodayLog,
+  parseSmartLog,
   searchIfctFoods,
 } from '../../api/dailyLogApi.js';
 import { Button, Card, Modal } from '../common/index.js';
@@ -33,6 +36,24 @@ function formatAmount(value) {
   return Number.isFinite(Number(value)) ? round(Number(value)).toLocaleString() : '—';
 }
 
+function CountUp({ value }) {
+  const outputRef = useRef(null);
+  const number = Number(value) || 0;
+
+  useLayoutEffect(() => {
+    const controls = animate(0, number, {
+      duration: 0.8,
+      ease: 'easeOut',
+      onUpdate: (latest) => {
+        if (outputRef.current) outputRef.current.textContent = formatAmount(latest);
+      },
+    });
+    return controls.stop;
+  }, [number]);
+
+  return <span ref={outputRef}>{formatAmount(0)}</span>;
+}
+
 function ProgressRow({ label, consumed, target, unit = 'g', color = 'bg-emerald-600' }) {
   const hasValue = consumed !== null && consumed !== undefined;
   const percentage = target > 0 ? Math.min(100, Math.max(0, (consumed / target) * 100)) : 0;
@@ -41,7 +62,7 @@ function ProgressRow({ label, consumed, target, unit = 'g', color = 'bg-emerald-
       <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
         <span className="font-medium text-slate-700 dark:text-slate-200">{label}</span>
         <span className="text-slate-500 dark:text-slate-400">
-          {hasValue ? `${formatAmount(consumed)} / ` : 'Data unavailable / '}{target ? `${formatAmount(target)} ${unit}` : 'target unavailable'}
+          {hasValue ? <><CountUp value={consumed} /> / </> : 'Data unavailable / '}{target ? <><CountUp value={target} /> {unit}</> : 'target unavailable'}
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label={`${label} progress`} aria-valuetext={hasValue ? `${formatAmount(consumed)} of ${formatAmount(target)} ${unit}` : 'Data unavailable'} aria-valuemin="0" aria-valuemax={target || 100} aria-valuenow={hasValue ? Math.min(consumed, target || 100) : 0}>
@@ -54,18 +75,29 @@ function ProgressRow({ label, consumed, target, unit = 'g', color = 'bg-emerald-
 function Ring({ consumed, target }) {
   const ratio = target > 0 ? consumed / target : 0;
   const percentage = Math.round(ratio * 100);
-  const color = ratio > 1 ? '#dc2626' : ratio >= 1 ? '#244b36' : ratio >= 0.8 ? '#d97706' : '#244b36';
+  const color = ratio > 0.9 ? '#dc4b35' : ratio >= 0.5 ? '#e58a27' : '#397a55';
+  const shadowColor = ratio > 0.9 ? 'rgba(220, 75, 53, 0.28)' : ratio >= 0.5 ? 'rgba(229, 138, 39, 0.28)' : 'rgba(57, 122, 85, 0.28)';
+  const progress = Math.min(Math.max(ratio * 100, 0), 100);
   return (
     <div
-      className="grid h-44 w-44 shrink-0 place-items-center rounded-full"
+      className="relative grid h-48 w-48 shrink-0 place-items-center rounded-full"
       role="img"
       aria-label={`${formatAmount(consumed)} of ${target ? formatAmount(target) : 'unknown'} calories`}
-      style={{ background: `conic-gradient(${color} ${Math.min(percentage, 100)}%, #e2e8f0 0)` }}
     >
-      <div className="grid h-36 w-36 content-center justify-items-center rounded-full bg-white dark:bg-slate-900">
-        <span className="text-3xl font-bold text-slate-900 dark:text-white">{formatAmount(consumed)}</span>
-        <span className="mt-1 text-xs text-slate-500 dark:text-slate-400">of {target ? `${formatAmount(target)} kcal` : 'target unavailable'}</span>
-        <span className="mt-2 text-xs font-semibold" style={{ color }}>{percentage}%</span>
+      <svg className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" viewBox="0 0 160 160" aria-hidden="true">
+        <circle cx="80" cy="80" r="69" fill="none" strokeWidth="11" className="stroke-slate-200 dark:stroke-slate-700" />
+        <circle
+          cx="80" cy="80" r="69" fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
+          pathLength="100" strokeDasharray={`${progress} 100`}
+          className="transition-[stroke-dasharray,stroke] duration-700 ease-out"
+          style={{ filter: `drop-shadow(0 3px 6px ${shadowColor})` }}
+        />
+      </svg>
+      <div className="relative grid h-40 w-40 content-center justify-items-center rounded-full bg-white/80 dark:bg-slate-900/80">
+        <span className="mb-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-50 text-orange-600 dark:bg-orange-400/10 dark:text-orange-300"><Flame size={18} strokeWidth={2.2} /></span>
+        <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white"><CountUp value={consumed} /></span>
+        <span className="mt-1 text-xs text-slate-500 dark:text-slate-400">of {target ? <><CountUp value={target} /> kcal</> : 'target unavailable'}</span>
+        <span className="mt-2 text-xs font-bold" style={{ color }}><CountUp value={percentage} />%</span>
       </div>
     </div>
   );
@@ -88,6 +120,11 @@ export default function CalorieTracker() {
   const [mealType, setMealType] = useState('snack');
   const [savingFood, setSavingFood] = useState(false);
   const [foodError, setFoodError] = useState('');
+  const [smartText, setSmartText] = useState('');
+  const [smartLogError, setSmartLogError] = useState('');
+  const [parsingSmartLog, setParsingSmartLog] = useState(false);
+  const [smartItems, setSmartItems] = useState([]);
+  const [savingSmartItems, setSavingSmartItems] = useState(false);
   const [supplementName, setSupplementName] = useState('Vitamin D3 60k IU');
   const [vitamins, setVitamins] = useState({ vitaminD: '60000', b12: '0', iron: '0', calcium: '0' });
   const [savingSupplement, setSavingSupplement] = useState(false);
@@ -206,6 +243,69 @@ export default function CalorieTracker() {
     }
   };
 
+  const handleSmartParse = async (event) => {
+    event.preventDefault();
+    if (smartText.trim().length < 3) return;
+    setParsingSmartLog(true);
+    setSmartLogError('');
+    try {
+      const result = await parseSmartLog(smartText.trim());
+      if (!result.items?.length) {
+        setSmartLogError('No foods could be matched. Try naming the foods and portions more clearly.');
+        return;
+      }
+      setSmartItems(result.items);
+      setSelectedFood(null);
+      setSearch('');
+      setFoodError('');
+      setFoodModalOpen(true);
+    } catch (error) {
+      setSmartLogError(error.message || 'Could not parse this meal. Please try again.');
+    } finally {
+      setParsingSmartLog(false);
+    }
+  };
+
+  const handleConfirmSmartLog = async () => {
+    if (smartItems.length === 0) return;
+    setSavingSmartItems(true);
+    setFoodError('');
+    let savedCount = 0;
+    try {
+      for (const item of smartItems) {
+        await addFoodToLog({
+          mealType: item.mealType,
+          ifctCode: item.ifctCode,
+          quantityGrams: item.quantityGrams,
+        });
+        savedCount += 1;
+      }
+      setSmartItems([]);
+      setFoodModalOpen(false);
+      setSmartText('');
+    } catch (error) {
+      if (savedCount > 0) {
+        setSmartItems((items) => items.slice(savedCount));
+        try {
+          await refresh();
+        } catch {
+          // Keep the remaining items available so they can be retried.
+        }
+      }
+      setFoodError(savedCount > 0
+        ? `${savedCount} item${savedCount === 1 ? '' : 's'} saved. The remaining items were not added. ${error.message}`
+        : (error.message || 'Could not add these foods. Please try again.'));
+      return;
+    } finally {
+      setSavingSmartItems(false);
+    }
+    try {
+      await refresh();
+    } catch (error) {
+      setLoadError(error.message || 'Foods were added, but today’s log could not be refreshed.');
+    }
+  };
+
   const handleAddSupplement = async (event) => {
     event.preventDefault();
     setSavingSupplement(true);
@@ -226,15 +326,23 @@ export default function CalorieTracker() {
 
   return (
     <section aria-labelledby="calorie-tracker-title" className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="space-y-3">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-leaf dark:text-emerald-300">Daily nutrition</p>
-          <h2 id="calorie-tracker-title" className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">Calorie tracker</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Track meals, macros, and logged micronutrients for today.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-leaf dark:text-emerald-300">Your daily balance</p>
+          <h2 id="calorie-tracker-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Nutrition at a glance</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">A thoughtful look at what you’ve nourished your body with today.</p>
         </div>
+        <form onSubmit={handleSmartParse} className="max-w-2xl space-y-2">
+          <label htmlFor="smart-food-text" className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Smart Log</label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input id="smart-food-text" value={smartText} onChange={(event) => setSmartText(event.target.value)} placeholder="What did you eat? (e.g., 2 rotis and dal)" maxLength={2000} className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none placeholder:text-slate-400 focus:border-leaf focus:ring-2 focus:ring-leaf/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+            <Button type="submit" size="sm" loading={parsingSmartLog} disabled={smartText.trim().length < 3}>{parsingSmartLog ? 'Parsing…' : 'Review foods'}</Button>
+          </div>
+          {smartLogError && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{smartLogError}</p>}
+        </form>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => { setFoodError(''); setFoodModalOpen(true); }}>Add food</Button>
-          <Button size="sm" variant="secondary" onClick={() => { setSupplementError(''); setSupplementModalOpen(true); }}>Log supplement</Button>
+          <Button size="sm" className="shadow-sm" onClick={() => { setSmartItems([]); setFoodError(''); setFoodModalOpen(true); }}><Utensils size={16} /> Add food</Button>
+          <Button size="sm" variant="secondary" onClick={() => { setSupplementError(''); setSupplementModalOpen(true); }}><Pill size={16} /> Log supplement</Button>
         </div>
       </div>
 
@@ -243,16 +351,17 @@ export default function CalorieTracker() {
         <Card><p className="text-sm text-slate-500" role="status">Loading today’s nutrition…</p></Card>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card as="article" className="flex flex-col items-center justify-center gap-5 sm:flex-row sm:justify-start">
+          <Card as="article" className="flex flex-col items-center justify-center gap-5 bg-gradient-to-br from-white to-slate-50 shadow-md dark:from-slate-900 dark:to-slate-950 sm:flex-row sm:justify-start">
             <Ring consumed={consumed} target={target} />
             <div className="text-center sm:text-left">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Calories</h3>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{target ? `${formatAmount(Math.max(0, target - consumed))} kcal remaining` : 'Complete your profile to calculate a daily target.'}</p>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300"><Flame size={14} /> Calories today</span>
+              <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-900 dark:text-white">A little progress, every day</h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{target ? <><CountUp value={Math.max(0, target - consumed)} /> kcal left in your daily target</> : 'Complete your profile to calculate a daily target.'}</p>
               {target && consumed > target && <p className="mt-2 text-sm font-medium text-red-700 dark:text-red-300">You are {formatAmount(consumed - target)} kcal over your target.</p>}
             </div>
           </Card>
-          <Card as="section" aria-labelledby="macro-title">
-            <h3 id="macro-title" className="mb-5 text-lg font-semibold text-slate-900 dark:text-white">Macros</h3>
+          <Card as="section" aria-labelledby="macro-title" className="bg-gradient-to-br from-white to-slate-50 transition duration-200 hover:scale-[1.01] hover:shadow-md dark:from-slate-900 dark:to-slate-950">
+            <h3 id="macro-title" className="mb-5 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300"><Dumbbell size={18} /></span>Macros</h3>
             <div className="space-y-5">
               {macroDefinitions.map(({ key, label, color }) => (
                 <ProgressRow key={key} label={label} consumed={today.totals?.[key] ?? 0} target={macroTargets?.[key]} color={color} />
@@ -260,8 +369,8 @@ export default function CalorieTracker() {
             </div>
           </Card>
 
-          <Card as="section" aria-labelledby="micronutrient-title">
-            <h3 id="micronutrient-title" className="text-lg font-semibold text-slate-900 dark:text-white">Micronutrient progress</h3>
+          <Card as="section" aria-labelledby="micronutrient-title" className="bg-gradient-to-br from-white to-slate-50 transition duration-200 hover:scale-[1.01] hover:shadow-md dark:from-slate-900 dark:to-slate-950">
+            <h3 id="micronutrient-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300"><Pill size={18} /></span>Micronutrient progress</h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Daily logged intake compared with project reference values.</p>
             <div className="mt-5 space-y-5">
               {comparisons.filter((item) => micronutrientDefinitions.some(({ nutrient }) => nutrient === item.nutrient)).map((item) => (
@@ -280,9 +389,9 @@ export default function CalorieTracker() {
             {comparisons.length === 0 && <p className="mt-4 text-sm text-slate-500">Micronutrient data is not available yet.</p>}
           </Card>
 
-          <Card as="section" aria-labelledby="today-meals-title">
+          <Card as="section" aria-labelledby="today-meals-title" className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
             <div className="flex items-center justify-between gap-3">
-              <h3 id="today-meals-title" className="text-lg font-semibold text-slate-900 dark:text-white">Today’s food</h3>
+              <h3 id="today-meals-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-50 text-orange-700 dark:bg-orange-400/10 dark:text-orange-300"><Apple size={18} /></span>Today’s food</h3>
               <span className="text-sm text-slate-500 dark:text-slate-400">{today.meals.length} {today.meals.length === 1 ? 'item' : 'items'}</span>
             </div>
             {today.meals.length ? (
@@ -310,7 +419,35 @@ export default function CalorieTracker() {
         </div>
       )}
 
-      <Modal isOpen={foodModalOpen} onClose={() => setFoodModalOpen(false)} title="Add food">
+      <Modal isOpen={foodModalOpen} onClose={() => { setFoodModalOpen(false); setSmartItems([]); }} title={smartItems.length ? 'Review smart log' : 'Add food'}>
+        {smartItems.length ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 dark:text-slate-300">Check the foods, portions, and IFCT-based estimates before adding them to today’s log.</p>
+            <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+              {smartItems.map((item, index) => (
+                <li key={`${item.ifctCode}-${index}`} className="flex items-start justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900 dark:text-white">{item.foodName}</p>
+                    <p className="text-xs capitalize text-slate-500 dark:text-slate-400">{item.mealType} · {item.quantityGrams} g · {item.ifctCode}</p>
+                  </div>
+                  <div className="shrink-0 text-right text-xs text-slate-600 dark:text-slate-300">
+                    <p className="font-semibold">{formatAmount(item.calories)} kcal</p>
+                    <p>P {formatAmount(item.protein)} · C {formatAmount(item.carbs)} · F {formatAmount(item.fat)} g</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100">
+              <p className="font-semibold">Estimated total: {formatAmount(smartItems.reduce((sum, item) => sum + item.calories, 0))} kcal</p>
+              <p className="mt-1">Protein {formatAmount(smartItems.reduce((sum, item) => sum + item.protein, 0))} g · Carbs {formatAmount(smartItems.reduce((sum, item) => sum + item.carbs, 0))} g · Fat {formatAmount(smartItems.reduce((sum, item) => sum + item.fat, 0))} g</p>
+            </div>
+            {foodError && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{foodError}</p>}
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => { setSmartItems([]); setFoodModalOpen(false); }} disabled={savingSmartItems}>Cancel</Button>
+              <Button className="flex-1" onClick={handleConfirmSmartLog} loading={savingSmartItems}>{savingSmartItems ? 'Adding foods…' : 'Confirm & add foods'}</Button>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-4">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="ifct-food-search">Search IFCT foods</label>
           <input id="ifct-food-search" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedFood(null); }} placeholder="Try rice, lentils, spinach…" className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
@@ -342,6 +479,7 @@ export default function CalorieTracker() {
             </form>
           )}
         </div>
+        )}
       </Modal>
 
       <Modal isOpen={supplementModalOpen} onClose={() => setSupplementModalOpen(false)} title="Log supplement">

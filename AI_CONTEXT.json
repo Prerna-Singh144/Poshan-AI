@@ -142,6 +142,7 @@
       "Authenticated food and supplement logging with daily calorie and micronutrient totals compared against project reference values.",
       "Dashboard calorie tracker with IFCT food search, optimistic food logging, macro progress, and supplement/micronutrient progress.",
       "Authenticated AI text-to-food parsing through the configured OmniRoute endpoint with IFCT code validation.",
+      "Authenticated Smart Log preview that calculates IFCT nutrients and requires user confirmation before food logging.",
       "UUID-named, signature-checked PDF/JPEG/PNG uploads with a 10 MB limit.",
       "Tesseract.js OCR with an optional Redis-backed BullMQ worker and synchronous fallback for PDF and image reports.",
       "Sample OCR parser/model tests and Postman instructions.",
@@ -250,7 +251,14 @@
         "method": "POST",
         "path": "/api/logs/add-supplement",
         "auth": "Access token",
-        "body": "supplementName and vitamins; vitaminD in IU, b12 in µg, iron and calcium in mg.",
+        "body": "Either supplementId, positive dosage, and catalog-matching unit; or legacy supplementName and vitamins. Catalog logs use the canonical name and derive tracked micronutrients for Vitamin D3, Vitamin B12, Iron, and Calcium.",
+        "status": "Implemented."
+      },
+      {
+        "method": "GET",
+        "path": "/api/supplements/list",
+        "auth": "No",
+        "response": "Static supplement catalog with id, name, category, defaultDosage, and unit. Defaults are editable examples, not personalized recommendations.",
         "status": "Implemented."
       },
       {
@@ -259,6 +267,14 @@
         "auth": "Access token",
         "body": "text, 3-2000 characters.",
         "status": "Implemented; returns structured IFCT-coded food items without persisting them."
+      },
+      {
+        "method": "POST",
+        "path": "/api/logs/smart-log",
+        "auth": "Access token",
+        "body": "text, 3-2000 characters.",
+        "response": "IFCT-matched items with per-item calories, protein, carbs, and fat, plus summed totals. Food items are not persisted until the user confirms them through add-food.",
+        "status": "Implemented."
       },
       {
         "method": "GET",
@@ -477,6 +493,9 @@
         "userId": "Required ObjectId reference to User.",
         "date": "Required YYYY-MM-DD string; assigned by the server.",
         "supplementName": "Required string, 1-120 characters.",
+        "supplementId": "Optional catalog ID for catalog-based logs; absent for legacy free-name logs.",
+        "dosage": "Optional positive numeric amount; required for catalog-based logs.",
+        "unit": "Optional string; must match the selected catalog item for catalog-based logs.",
         "vitamins": "vitaminD in IU, b12 in µg, iron in mg, and calcium in mg; each defaults to 0."
       },
       "timestamps": true,

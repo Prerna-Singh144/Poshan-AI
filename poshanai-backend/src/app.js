@@ -16,7 +16,7 @@ import lifestyleRoutes from './routes/lifestyleRoutes.js';
 import calorieRoutes from './routes/calorieRoutes.js';
 import dailyLogRoutes from './routes/dailyLogRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
-
+import supplementRoutes from './routes/supplementRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import requestLogger from './middleware/requestLogger.js';
 import { getHealthStatus } from './services/healthService.js';
@@ -66,6 +66,7 @@ app.use('/api/lifestyle', lifestyleRoutes);
 app.use('/api/calories', calorieRoutes);
 app.use('/api/logs', dailyLogRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/supplements', supplementRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
