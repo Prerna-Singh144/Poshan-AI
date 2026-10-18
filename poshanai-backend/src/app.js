@@ -10,6 +10,8 @@ import reportRoutes from './routes/reportRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import lifestyleRoutes from './routes/lifestyleRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import requestLogger from './middleware/requestLogger.js';
 import { getHealthStatus } from './services/healthService.js';
@@ -51,6 +53,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/mealplans', mealPlanRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/lifestyle', lifestyleRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
