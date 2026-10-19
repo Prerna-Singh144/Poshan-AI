@@ -7,13 +7,14 @@ import {
   getMedicalDisclaimer,
   retrieveFoodsForDeficiencies,
 } from '../rag/ragService.js';
-import { buildMealPlanPrompt, mealPlanSystemPrompt } from '../rag/promptBuilder.js';
+import { buildMealPlanPrompt, hasSevereB12Deficiency, mealPlanSystemPrompt } from '../rag/promptBuilder.js';
 import logger from '../utils/logger.js';
 import httpError from '../utils/httpError.js';
 
 const aiMealSchema = Joi.object({
   day: Joi.number().integer().min(1).max(7).required(),
   mealType: Joi.string().valid('breakfast', 'lunch', 'dinner', 'snack').required(),
+  nutrientTargets: Joi.array().items(Joi.string().trim().min(1).max(40)).min(1).max(5).required(),
   items: Joi.array()
     .items(Joi.object({
       ifctCode: Joi.string().trim().max(12).required(),
@@ -41,6 +42,7 @@ const aiResponseSchema = Joi.object({
       return meals;
     })
     .required(),
+  supplementGuidance: Joi.string().max(500).allow('').optional(),
   disclaimer: Joi.string().required(),
 }).unknown(false);
 
@@ -125,9 +127,10 @@ function round(value) {
 }
 
 function buildStoredMeals(generatedMeals, foodByCode) {
-  return generatedMeals.map(({ day, mealType, items }) => ({
+  return generatedMeals.map(({ day, mealType, nutrientTargets, items }) => ({
     day,
     mealType,
+    nutrientTargets,
     items: items.map(({ ifctCode, foodName, quantityGrams }) => {
       const food = foodByCode.get(ifctCode);
       if (!food || food.foodName !== foodName) {
@@ -165,7 +168,9 @@ export async function generateMealPlan(userId, reportId, preferences = {}) {
 
   const deficiencies = report.extractedValues
     .filter(({ flag }) => flag === 'low')
-    .map(({ nutrient }) => ({ nutrient }));
+    .map(({ nutrient, value, unit, normalizedValue, normalizedUnit, flag }) => ({
+      nutrient, value, unit, normalizedValue, normalizedUnit, flag,
+    }));
   const foods = retrieveFoodsForDeficiencies(deficiencies, preferences);
   if (foods.length === 0) {
     throw httpError(422, 'NO_IFCT_FOODS_AVAILABLE', 'No IFCT foods match the selected diet, allergies, and region.');
@@ -191,6 +196,9 @@ export async function generateMealPlan(userId, reportId, preferences = {}) {
     targetDeficiencies: deficiencies.map(({ nutrient }) => nutrient),
     planDurationDays: 7,
     meals,
+    supplementGuidance: hasSevereB12Deficiency(deficiencies)
+      ? 'Discuss a clinician-supervised vitamin B12 supplement with your healthcare professional. They should decide whether it is appropriate and determine the dose and duration; do not self-medicate.'
+      : generated.supplementGuidance || null,
     aiModelUsed: env.omniRouteModel,
     ragSourcesUsed,
     disclaimer,

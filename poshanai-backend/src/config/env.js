@@ -15,6 +15,10 @@ if (!accessSecret || !refreshSecret) {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? (nodeEnv === 'production' ? 1 : 0));
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 10) {
+  throw new Error('TRUST_PROXY_HOPS must be an integer between 0 and 10.');
+}
 const storageType = process.env.STORAGE_TYPE ?? (nodeEnv === 'production' ? 's3' : 'local');
 if (!['local', 's3'].includes(storageType)) {
   throw new Error('STORAGE_TYPE must be either local or s3.');
@@ -49,6 +53,7 @@ const signingKey = process.env.SIGNING_KEY ?? createHmac('sha512', accessSecret)
 export const env = {
   nodeEnv,
   port: Number(process.env.PORT ?? 5000),
+  trustProxyHops,
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
   redisUrl: process.env.REDIS_URL ?? null,

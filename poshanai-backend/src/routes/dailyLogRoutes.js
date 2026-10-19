@@ -4,6 +4,7 @@ import { verifyToken } from '../middleware/authMiddleware.js';
 import * as dailyLogController from '../controllers/dailyLogController.js';
 import validationError from '../utils/validationError.js';
 import { getSupplementIds } from '../services/supplementCatalogService.js';
+import { MICRONUTRIENTS } from '../config/constants.js';
 
 const router = Router();
 const addFoodSchema = Joi.object({
@@ -17,10 +18,11 @@ const addSupplementSchema = Joi.object({
   unit: Joi.string().trim().min(1).max(20),
   supplementName: Joi.string().trim().min(1).max(120),
   vitamins: Joi.object({
-    vitaminD: Joi.number().min(0).max(100000).default(0),
+    ...Object.fromEntries(MICRONUTRIENTS.map(({ key }) => [
+      key,
+      Joi.number().min(0).max(100000).default(0),
+    ])),
     b12: Joi.number().min(0).max(100000).default(0),
-    iron: Joi.number().min(0).max(10000).default(0),
-    calcium: Joi.number().min(0).max(100000).default(0),
   }).default({}).unknown(false),
 }).xor('supplementId', 'supplementName')
   .when(Joi.object({ supplementId: Joi.exist() }).unknown(), {

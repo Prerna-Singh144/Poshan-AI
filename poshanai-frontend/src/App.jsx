@@ -12,6 +12,7 @@ import MealPlanView from './pages/MealPlanView.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Recommendations from './pages/Recommendations.jsx';
 import NotFound from './pages/NotFound.jsx';
+import Experts from './pages/Experts.jsx';
 
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/experts" element={<Experts />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/profile" element={<Profile />} />

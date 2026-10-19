@@ -5,6 +5,7 @@ import {
   getMedicalDisclaimer,
   retrieveFoodsForDeficiencies,
 } from '../src/rag/ragService.js';
+import { hasSevereB12Deficiency } from '../src/rag/promptBuilder.js';
 
 test('provides IFCT records with serving size and preserves unreported vitamin B12 as null', () => {
   const foods = retrieveFoodsForDeficiencies([], { dietType: 'nonveg' });
@@ -33,7 +34,26 @@ test('builds a prompt from validated preferences and includes the required discl
   assert.match(prompt, /"ifctCode"/);
   assert.match(prompt, /"foodName"/);
   assert.match(prompt, /Generate meals covering each day from 1 through 7/);
+  assert.match(prompt, /nutrientTargets/);
   assert.match(getMedicalDisclaimer(), /does not diagnose, treat, or replace advice/);
+});
+
+test('targets confirmed Iron and severe Vitamin B12 deficiencies without inventing IFCT values', () => {
+  const deficiencies = [
+    { nutrient: 'Iron', value: 8, unit: 'µg/dL', normalizedValue: 8, normalizedUnit: 'µg/dL', flag: 'low' },
+    { nutrient: 'Vitamin B12', value: 120, unit: 'pg/mL', normalizedValue: 120, normalizedUnit: 'pg/mL', flag: 'low' },
+  ];
+  const foods = retrieveFoodsForDeficiencies(deficiencies, { dietType: 'veg' });
+  const prompt = buildMealPlanPrompt({ dietType: 'veg' }, deficiencies, foods);
+
+  assert.equal(hasSevereB12Deficiency(deficiencies), true);
+  assert.match(prompt, /The user is deficient in Iron \(LOW, 8 µg\/dL\); Vitamin B12 \(LOW, 120 pg\/mL\)/);
+  assert.match(prompt, /specifically target these deficiencies/);
+  assert.match(prompt, /For every meal, explicitly name which nutrient it targets/);
+  assert.match(prompt, /below 150 pg\/mL/);
+  assert.match(prompt, /clinician-supervised vitamin B12 supplement/);
+  assert.match(prompt, /"nutrientTargets": \[/);
+  assert.ok(foods.every((food) => food.nutrients.vitaminB12 === null));
 });
 
 test('returns vegetarian foods high in Vitamin D or Iron for Vitamin D + Iron deficiency', () => {

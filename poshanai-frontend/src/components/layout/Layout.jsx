@@ -9,6 +9,7 @@ import Navbar from './Navbar.jsx';
 const links = [
   { to: '/', label: '← Back to Home' },
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/experts', label: 'Connect with experts' },
   { to: '/recommendations', label: 'Recommended tests' },
   { to: '/profile', label: 'Profile' },
   { to: '/upload', label: 'Upload report' },

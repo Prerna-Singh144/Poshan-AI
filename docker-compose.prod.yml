@@ -32,6 +32,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN in the production environment}
       MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in the production environment}
       REDIS_URL: ${REDIS_URL:?Set REDIS_URL in .env}

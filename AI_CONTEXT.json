@@ -151,20 +151,15 @@
     "pending": [
       "User profile endpoints are currently placeholders returning NOT_IMPLEMENTED.",
       "Production IFCT RAG integration; the current meal-plan RAG service is a small replaceable stub.",
-      "Automated integration tests against a running Redis instance and resolution of existing frontend hook lint errors."
+      "Automated integration tests against a running Redis instance."
     ],
     "source_note": "Status is inferred from the checked-in source. Re-check implementation before relying on this section."
   },
-  "critical_errors": [
-    {
-      "issue": "Frontend full lint currently reports errors in poshanai-frontend/src/hooks/useThrottle.js under react-hooks/refs and a warning in useCachedFetch.js.",
-      "status": "Existing issue observed during repository validation; unrelated to AI_CONTEXT.json."
-
-    }
-  ],
+  "critical_errors": [],
   "environment_variables": {
     "backend_env": {
-      "PORT": "Backend port; backend config defaults to 5000. Docker Compose currently maps host/container port 4000 and must be reconciled before using that container setup.",
+      "PORT": "Backend port; defaults to 5000 locally and is set to 4000 in Docker Compose.",
+      "TRUST_PROXY_HOPS": "Trusted proxy hop count for Express IP extraction and rate limiting; defaults to 0 for direct local access and is set to 1 for production Nginx-to-API traffic. Set it to the exact trusted proxy count.",
       "NODE_ENV": "development or production.",
       "MONGODB_URI": "MongoDB connection string; required.",
       "JWT_SECRET": "Optional shared JWT secret fallback; do not store the real value here.",

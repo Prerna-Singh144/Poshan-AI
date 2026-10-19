@@ -17,13 +17,16 @@ import calorieRoutes from './routes/calorieRoutes.js';
 import dailyLogRoutes from './routes/dailyLogRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import supplementRoutes from './routes/supplementRoutes.js';
+import expertRoutes from './routes/expertRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import requestLogger from './middleware/requestLogger.js';
 import { getHealthStatus } from './services/healthService.js';
 import { RATE_LIMITS } from './config/constants.js';
 
 const app = express();
-app.set('trust proxy', 1);
+// Trust only the explicitly configured proxy chain. Local direct requests must
+// not be able to choose their rate-limit identity with X-Forwarded-For.
+app.set('trust proxy', env.trustProxyHops);
 app.use(requestLogger);
 
 const apiLimiter = rateLimit({
@@ -48,7 +51,7 @@ app.use('/api', apiLimiter);
 app.get('/health', async (_req, res, next) => {
   try {
     const health = await getHealthStatus();
-    return res.status(health.status === 'ok' ? 200 : 503).json(health);
+    return res.status(health.status === 'ok' || health.status === 'degraded' ? 200 : 503).json(health);
   } catch (error) {
     return next(error);
   }
@@ -67,6 +70,7 @@ app.use('/api/calories', calorieRoutes);
 app.use('/api/logs', dailyLogRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/supplements', supplementRoutes);
+app.use('/api/experts', expertRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { animate } from 'framer-motion';
-import { Apple, Dumbbell, Flame, Pill, Utensils } from 'lucide-react';
+import { Apple, Dumbbell, Flame, Info, Pill, Utensils } from 'lucide-react';
 import client from '../../api/client.js';
 import {
   addFoodToLog,
@@ -27,11 +27,24 @@ const macroDefinitions = [
   { key: 'carbs', label: 'Carbs', color: 'bg-amber-500' },
   { key: 'fat', label: 'Fat', color: 'bg-sky-600' },
 ];
-const micronutrientDefinitions = [
-  { nutrient: 'Vitamin D', suggestion: 'fortified foods or eggs' },
-  { nutrient: 'Vitamin B12', suggestion: 'dairy, eggs, or fortified foods' },
-  { nutrient: 'Iron', suggestion: 'spinach, lentils, or beans' },
-];
+const micronutrientGuidance = {
+  vitaminA: { info: 'Supports vision, immune function, and healthy skin.', suggestion: 'carrots, sweet potato, or spinach' },
+  vitaminC: { info: 'Helps make collagen and supports iron absorption.', suggestion: 'amla, guava, or citrus fruit' },
+  vitaminD: { info: 'Helps the body absorb calcium and supports bones.', suggestion: 'fortified milk, eggs, or UV-exposed mushrooms' },
+  vitaminE: { info: 'Helps protect cells from oxidative damage.', suggestion: 'almonds, sunflower seeds, or peanuts' },
+  vitaminK: { info: 'Supports normal blood clotting and bone health.', suggestion: 'spinach, cabbage, or broccoli' },
+  vitaminB1: { info: 'Helps release energy from food and supports nerve function.', suggestion: 'whole grains, lentils, or beans' },
+  vitaminB2: { info: 'Helps release energy from food and supports cell growth.', suggestion: 'milk, curd, or mushrooms' },
+  vitaminB3: { info: 'Helps the body turn food into energy.', suggestion: 'peanuts, mushrooms, or whole grains' },
+  vitaminB6: { info: 'Supports protein metabolism and red blood cell function.', suggestion: 'chickpeas, banana, or potatoes' },
+  vitaminB9: { info: 'Supports DNA formation and red blood cell production.', suggestion: 'lentils, beans, or leafy greens' },
+  vitaminB12: { info: 'Supports nerve function and red blood cell production.', suggestion: 'dairy, eggs, or B12-fortified foods' },
+  iron: { info: 'Needed for oxygen transport in the blood.', suggestion: 'lentils, beans, or spinach with lemon' },
+  calcium: { info: 'Supports bones, teeth, and muscle function.', suggestion: 'milk, curd, or ragi' },
+  zinc: { info: 'Supports immune function, healing, and growth.', suggestion: 'chickpeas, pumpkin seeds, or dairy' },
+  magnesium: { info: 'Supports muscle, nerve, and energy functions.', suggestion: 'nuts, seeds, or whole grains' },
+  potassium: { info: 'Supports fluid balance and normal muscle function.', suggestion: 'banana, potatoes, or beans' },
+};
 
 function formatAmount(value) {
   return Number.isFinite(Number(value)) ? round(Number(value)).toLocaleString() : '—';
@@ -55,15 +68,24 @@ function CountUp({ value }) {
   return <span ref={outputRef}>{formatAmount(0)}</span>;
 }
 
-function ProgressRow({ label, consumed, target, unit = 'g', color = 'bg-emerald-600' }) {
+function ProgressRow({ label, consumed, target, unit = 'g', color = 'bg-emerald-600', info, dataUnavailable = false }) {
   const hasValue = consumed !== null && consumed !== undefined;
   const percentage = target > 0 ? Math.min(100, Math.max(0, (consumed / target) * 100)) : 0;
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
-        <span className="font-medium text-slate-700 dark:text-slate-200">{label}</span>
+        <span className="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-200">
+          {label}
+          {info && (
+            <span className="group relative inline-flex">
+              <button type="button" title={info} aria-label={`${label}: ${info}`} className="rounded-full text-slate-400 hover:text-leaf focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf">
+                <Info size={14} aria-hidden="true" />
+              </button>
+            </span>
+          )}
+        </span>
         <span className="text-slate-500 dark:text-slate-400">
-          {hasValue ? <><CountUp value={consumed} /> / </> : 'Data unavailable / '}{target ? <><CountUp value={target} /> {unit}</> : 'target unavailable'}
+          {hasValue ? <><CountUp value={consumed} /> / </> : `${dataUnavailable ? 'Not tracked yet' : 'Data unavailable'} / `}{target ? <><CountUp value={target} /> {unit}</> : 'target unavailable'}
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label={`${label} progress`} aria-valuetext={hasValue ? `${formatAmount(consumed)} of ${formatAmount(target)} ${unit}` : 'Data unavailable'} aria-valuemin="0" aria-valuemax={target || 100} aria-valuenow={hasValue ? Math.min(consumed, target || 100) : 0}>
@@ -194,12 +216,6 @@ export default function CalorieTracker() {
   const consumed = today.totals?.calories ?? 0;
   const comparisons = today.micronutrients?.rdaComparison ?? emptyComparisons;
   const visibleFoods = resultQuery === search.trim() ? foods : [];
-  const warnings = useMemo(() => micronutrientDefinitions.flatMap((definition) => {
-    const item = comparisons.find((row) => row.nutrient === definition.nutrient);
-    if (!item || item.consumed == null || !(item.rda > 0) || item.consumed / item.rda >= 0.5) return [];
-    return [{ ...definition, percent: Math.round((item.consumed / item.rda) * 100) }];
-  }), [comparisons]);
-
   const handleAddFood = async (event) => {
     event.preventDefault();
     if (!selectedFood || Number(grams) < 1) return;
@@ -372,21 +388,36 @@ export default function CalorieTracker() {
 
           <Card as="section" aria-labelledby="micronutrient-title" className="bg-gradient-to-br from-white to-slate-50 transition duration-200 hover:scale-[1.01] hover:shadow-md dark:from-slate-900 dark:to-slate-950">
             <h3 id="micronutrient-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300"><Pill size={18} /></span>Micronutrient progress</h3>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Daily logged intake compared with project reference values.</p>
-            <div className="mt-5 space-y-5">
-              {comparisons.filter((item) => micronutrientDefinitions.some(({ nutrient }) => nutrient === item.nutrient)).map((item) => (
-                <ProgressRow key={item.nutrient} label={item.nutrient} consumed={item.consumed ?? 0} target={item.rda} unit={item.unit} color={item.status === 'deficient' ? 'bg-amber-500' : 'bg-emerald-600'} />
-              ))}
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Daily logged intake compared with your reference. Select an info icon to learn what each nutrient does.</p>
+            <div className="mt-5 max-h-[34rem] space-y-5 overflow-y-auto pr-2" aria-label="Micronutrient progress list">
+              {comparisons.map((item) => {
+                const guidance = micronutrientGuidance[item.key] ?? {};
+                const percent = item.progressPercent != null && Number.isFinite(Number(item.progressPercent))
+                  ? Number(item.progressPercent)
+                  : item.consumed != null && item.rda > 0
+                    ? (Number(item.consumed) / Number(item.rda)) * 100
+                    : null;
+                const belowHalf = item.consumed != null && percent != null && percent < 50;
+                return (
+                  <div key={item.key ?? item.nutrient} className="space-y-2">
+                    <ProgressRow
+                      label={item.nutrient}
+                      consumed={item.consumed}
+                      target={item.rda}
+                      unit={item.unit}
+                      info={guidance.info ?? 'An essential nutrient that supports normal body functions.'}
+                      dataUnavailable={item.dataUnavailable}
+                      color={belowHalf ? 'bg-amber-500' : 'bg-emerald-600'}
+                    />
+                    {belowHalf && guidance.suggestion && (
+                      <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+                        Below 50% today. Try adding {guidance.suggestion} to a meal.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            {warnings.length > 0 && (
-              <ul className="mt-5 space-y-2" aria-label="Micronutrient suggestions">
-                {warnings.map(({ nutrient, suggestion, percent }) => (
-                  <li key={nutrient} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-                    Your logged {nutrient} is below 50% of its reference ({percent}%). Suggest adding {suggestion}.
-                  </li>
-                ))}
-              </ul>
-            )}
             {comparisons.length === 0 && <p className="mt-4 text-sm text-slate-500">Micronutrient data is not available yet.</p>}
           </Card>
 
