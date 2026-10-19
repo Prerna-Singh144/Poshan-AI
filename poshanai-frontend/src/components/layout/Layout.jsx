@@ -8,6 +8,7 @@ import Navbar from './Navbar.jsx';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/calorie-tracker', label: 'Calorie tracker' },
   { to: '/recommendations', label: 'Recommended tests' },
   { to: '/profile', label: 'Profile' },
   { to: '/upload', label: 'Upload report' },

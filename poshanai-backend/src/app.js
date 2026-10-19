@@ -13,6 +13,8 @@ import adminRoutes from './routes/adminRoutes.js';
 
 // Import all routes (Combined from both branches)
 import lifestyleRoutes from './routes/lifestyleRoutes.js';
+import foodRoutes from './routes/foodRoutes.js';
+import logRoutes from './routes/logRoutes.js';
 import calorieRoutes from './routes/calorieRoutes.js';
 import dailyLogRoutes from './routes/dailyLogRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
@@ -54,18 +56,22 @@ app.get('/health', async (_req, res, next) => {
   }
 });
 
-// Mount all routes
+// Mount all routes (Combined)
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/mealplans', mealPlanRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
-
-// Mount new features (Combined)
 app.use('/api/lifestyle', lifestyleRoutes);
+app.use('/api/foods', foodRoutes);
 app.use('/api/calories', calorieRoutes);
-app.use('/api/logs', dailyLogRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// NOTE: Both branches had a '/api/logs' route. 
+// I kept both here, but Express will only use the first one (logRoutes).
+// If dailyLogRoutes is the newer/correct one, delete the logRoutes line below.
+app.use('/api/logs', logRoutes);
+app.use('/api/logs', dailyLogRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
