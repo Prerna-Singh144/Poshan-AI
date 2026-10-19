@@ -64,7 +64,7 @@ export default function Modal({ isOpen, onClose, title, children, className = ''
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            className={`relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900 ${className}`}
+            className={`liquid-glass-panel relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white/90 p-6 shadow-xl dark:bg-slate-900/90 ${className}`}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
               <h2 id="common-modal-title" className="text-xl font-semibold">

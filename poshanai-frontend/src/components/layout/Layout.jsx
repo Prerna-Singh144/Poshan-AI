@@ -7,6 +7,7 @@ import Footer from './Footer.jsx';
 import Navbar from './Navbar.jsx';
 
 const links = [
+  { to: '/', label: '← Back to Home' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/recommendations', label: 'Recommended tests' },
   { to: '/profile', label: 'Profile' },
@@ -27,7 +28,7 @@ function AuthenticatedNavbar({ dark, onToggleTheme, onToggleMenu }) {
           >
             ☰
           </button>
-          <Link to="/dashboard" className="text-xl font-bold text-leaf dark:text-emerald-300">
+          <Link to="/" aria-label="PoshanAI home" className="text-xl font-bold text-leaf dark:text-emerald-300">
             PoshanAI
           </Link>
         </div>

@@ -52,9 +52,9 @@ function retryRequest(refetch) {
   refetch().catch(() => {});
 }
 
-function StatCard({ label, value, detail, loading }) {
+function StatCard({ label, value, detail, loading, className }) {
   return (
-    <Card as="article" className="h-full">
+    <Card as="article" className={`dashboard-clay-stat h-full ${className || ''}`}>
       <h2 className="text-sm font-medium text-slate-600 dark:text-slate-300">{label}</h2>
       {loading ? (
         <Skeleton className="mt-3" width="16" height="8" />
@@ -316,9 +316,10 @@ export default function Dashboard() {
         </p>
       </motion.header>
 
-      <section aria-label="Nutrition overview" className="grid gap-4 sm:grid-cols-2">
+      <section aria-label="Nutrition overview" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-12">
         <StatCard
           label="Reports"
+          className="lg:col-span-5"
           value={reportsLoading ? null : reports?.length ?? '—'}
           detail="Reports in your account (up to 50)."
           loading={reportsLoading}
@@ -331,6 +332,7 @@ export default function Dashboard() {
           />
         ) : (
           <StatCard
+            className="lg:col-span-7"
             label="Active meal plans"
             value={mealPlansLoading ? null : mealPlans ? activeMealPlans.length : '—'}
             detail={hasMoreMealPlans ? 'Active plans on the first page; additional plans exist.' : 'Plans currently marked active.'}
@@ -339,11 +341,11 @@ export default function Dashboard() {
         )}
       </section>
 
-      <CalorieTracker />
+      <div className="dashboard-bento-feature"><CalorieTracker /></div>
 
-      <section aria-label="Profile and reports" className="grid gap-5 lg:grid-cols-2">
-        <ProfileSummary user={user} />
-        <ReportList reports={reports} isLoading={reportsLoading} error={reportsError} onRetry={() => retryRequest(refetchReports)} />
+      <section aria-label="Profile and reports" className="grid gap-5 lg:grid-cols-7">
+        <div className="lg:col-span-3"><ProfileSummary user={user} /></div>
+        <div className="lg:col-span-4"><ReportList reports={reports} isLoading={reportsLoading} error={reportsError} onRetry={() => retryRequest(refetchReports)} /></div>
       </section>
 
       {/* --- Report Review Section (Integrated from Member 2) --- */}

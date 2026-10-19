@@ -10,6 +10,7 @@ import {
   searchIfctFoods,
 } from '../../api/dailyLogApi.js';
 import { Button, Card, Modal } from '../common/index.js';
+import SmoothInput from '../ui/SmoothInput.jsx';
 
 const initialLog = {
   meals: [],
@@ -450,7 +451,7 @@ export default function CalorieTracker() {
         ) : (
         <div className="space-y-4">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200" htmlFor="ifct-food-search">Search IFCT foods</label>
-          <input id="ifct-food-search" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedFood(null); }} placeholder="Try rice, lentils, spinach…" className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+          <SmoothInput id="ifct-food-search" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedFood(null); }} placeholder="Try rice, lentils, spinach…" />
           <div className="max-h-52 space-y-2 overflow-y-auto" aria-live="polite">
             {searching && search.trim().length >= 2 && <p className="text-sm text-slate-500">Searching IFCT…</p>}
             {searchError && resultQuery === search.trim() && <p role="alert" className="text-sm text-red-700">{searchError}</p>}
