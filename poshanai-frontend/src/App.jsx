@@ -9,6 +9,7 @@ import Register from './pages/Register.jsx';
 import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import MealPlanView from './pages/MealPlanView.jsx';
+import CalorieTracker from './pages/CalorieTracker.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 
@@ -25,6 +26,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/calorie-tracker" element={<CalorieTracker />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/upload" element={<UploadReport />} />
             <Route path="/meal-plan/:id" element={<MealPlanView />} />
