@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import logo from '../assets/logo.svg';
 import Button from '../components/common/Button.jsx';
-import Input from '../components/common/Input.jsx';
+import SmoothInput from '../components/ui/SmoothInput.jsx';
 import Loader from '../components/common/Loader.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAuth } from '../hooks/useAuth.js';
@@ -64,7 +64,7 @@ export default function Login() {
           noValidate
           aria-label="Sign in"
         >
-          <Input
+          <SmoothInput
             label="Email"
             type="email"
             autoComplete="email"
@@ -72,7 +72,7 @@ export default function Login() {
             {...register('email')}
             error={errors.email?.message}
           />
-          <Input
+          <SmoothInput
             label="Password"
             type="password"
             autoComplete="current-password"

@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import logo from '../assets/logo.svg';
 import Button from '../components/common/Button.jsx';
-import Input from '../components/common/Input.jsx';
+import SmoothInput from '../components/ui/SmoothInput.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 
 const requiredNumber = (label, min, max, integer = false) =>
@@ -197,7 +197,7 @@ export default function Register() {
               Account details
             </legend>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input
+              <SmoothInput
                 label="Name"
                 type="text"
                 autoComplete="name"
@@ -206,7 +206,7 @@ export default function Register() {
                 {...registerField('name')}
                 error={errors.name?.message}
               />
-              <Input
+              <SmoothInput
                 label="Email"
                 type="email"
                 autoComplete="email"
@@ -215,7 +215,7 @@ export default function Register() {
                 {...registerField('email')}
                 error={errors.email?.message}
               />
-              <Input
+              <SmoothInput
                 label="Password"
                 type="password"
                 autoComplete="new-password"
@@ -223,7 +223,7 @@ export default function Register() {
                 {...registerField('password')}
                 error={errors.password?.message}
               />
-              <Input
+              <SmoothInput
                 label="Confirm password"
                 type="password"
                 autoComplete="new-password"
@@ -238,7 +238,7 @@ export default function Register() {
               About you
             </legend>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input
+              <SmoothInput
                 label="Age"
                 type="number"
                 inputMode="numeric"
@@ -262,7 +262,7 @@ export default function Register() {
                 <option value="male">Male</option>
                 <option value="other">Other</option>
               </SelectField>
-              <Input
+              <SmoothInput
                 label="Weight (kg)"
                 type="number"
                 inputMode="decimal"
@@ -272,7 +272,7 @@ export default function Register() {
                 {...registerField('weightKg', { valueAsNumber: true })}
                 error={errors.weightKg?.message}
               />
-              <Input
+              <SmoothInput
                 label="Height (cm)"
                 type="number"
                 inputMode="decimal"
@@ -297,7 +297,7 @@ export default function Register() {
                 <option value="vegan">Vegan</option>
                 <option value="eggetarian">Eggetarian</option>
               </SelectField>
-              <Input
+              <SmoothInput
                 label="Region or state"
                 type="text"
                 autoComplete="address-level1"

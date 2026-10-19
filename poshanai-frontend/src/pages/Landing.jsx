@@ -1,27 +1,9 @@
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import logo from '../assets/logo.svg';
-
-const benefits = [
-  {
-    number: '01',
-    title: 'Know what’s on your plate',
-    text: 'Make sense of everyday foods with nutrition insights that feel clear, not complicated.',
-    icon: '◒',
-  },
-  {
-    number: '02',
-    title: 'Meals made for real life',
-    text: 'Find balanced meal inspiration rooted in familiar ingredients and Indian food culture.',
-    icon: '✳',
-  },
-  {
-    number: '03',
-    title: 'Small steps, your pace',
-    text: 'Build a healthier routine around the foods you love, one thoughtful choice at a time.',
-    icon: '↗',
-  },
-];
+import { ReactLenis } from 'lenis/dist/lenis-react.mjs';
+const StickyCards = lazy(() => import('../components/ui/StickyCards.jsx'));
 
 function BalancedPlate() {
   return (
@@ -69,6 +51,7 @@ export default function Landing() {
   const actionLabel = isAuthenticated ? 'Go to your dashboard' : 'Get started for free';
 
   return (
+    <ReactLenis root options={{ lerp: 0.1, smoothWheel: true }}>
     <main className="landing-page">
       <header className="landing-header">
         <Link to="/" className="landing-brand" aria-label="PoshanAI home">
@@ -127,36 +110,13 @@ export default function Landing() {
         <span className="hero-index" aria-hidden="true">01 / 03</span>
       </section>
 
-      <section className="landing-values" id="benefits">
-        <div className="values-heading">
-          <div>
-            <p className="section-kicker">A FRESH TAKE ON FEELING GOOD</p>
-            <h2>Wellness that fits <span>your table.</span></h2>
-          </div>
-          <p className="values-intro">
-            No rigid rules or one-size-fits-all plans. Just a more helpful relationship with the
-            food you already know and love.
-          </p>
-        </div>
-        <div className="benefit-grid">
-          {benefits.map((benefit) => (
-            <article className="benefit-card" key={benefit.number}>
-              <div className="benefit-card-top">
-                <span className="benefit-icon" aria-hidden="true">{benefit.icon}</span>
-                <span className="benefit-number">{benefit.number}</span>
-              </div>
-              <h3>{benefit.title}</h3>
-              <p>{benefit.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
+      <Suspense fallback={<section className="sticky-features" aria-label="PoshanAI features" />}><StickyCards /></Suspense>
       <footer className="landing-footer">
         <Link to="/" className="footer-brand">poshan<span>ai</span></Link>
         <p>Good food is personal. Your wellness journey should be, too.</p>
         <span>Made with care, for every plate. <span aria-hidden="true">✳</span></span>
       </footer>
     </main>
+    </ReactLenis>
   );
 }

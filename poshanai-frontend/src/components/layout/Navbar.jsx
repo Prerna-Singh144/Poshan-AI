@@ -16,7 +16,7 @@ export default function Navbar() {
   }, [isDark]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-emerald-100/80 bg-white/95 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+    <header className="sticky top-0 z-30 border-b border-white/20 bg-white/70 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/75">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to={user ? '/dashboard' : '/'} className="flex shrink-0 items-center gap-2" aria-label="PoshanAI home">
           <img src={logo} alt="" className="h-10 w-10 rounded-full object-cover" />

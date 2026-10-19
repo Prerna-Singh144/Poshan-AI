@@ -18,7 +18,7 @@ import logRoutes from './routes/logRoutes.js';
 import calorieRoutes from './routes/calorieRoutes.js';
 import dailyLogRoutes from './routes/dailyLogRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
-
+import supplementRoutes from './routes/supplementRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import requestLogger from './middleware/requestLogger.js';
 import { getHealthStatus } from './services/healthService.js';
@@ -66,6 +66,7 @@ app.use('/api/lifestyle', lifestyleRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/calories', calorieRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/supplements', supplementRoutes);
 
 // NOTE: Both branches had a '/api/logs' route. 
 // I kept both here, but Express will only use the first one (logRoutes).

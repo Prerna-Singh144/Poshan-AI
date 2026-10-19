@@ -6,6 +6,7 @@ import httpError from '../utils/httpError.js';
 import { calculateMaintenanceCalories } from '../services/calorieService.js';
 import { searchIfctFoods } from '../rag/ragService.js';
 import { parseFoodsFromText } from '../services/aiFoodParserService.js';
+import { getSupplementById } from '../services/supplementCatalogService.js';
 import {
   buildFoodEntry,
   compareMicronutrientsToRda,
@@ -24,12 +25,39 @@ export const parseFoods = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: { items } });
 });
 
+export const smartLog = asyncHandler(async (req, res) => {
+  const parsedItems = await parseFoodsFromText(req.body.text);
+  const items = parsedItems.map((item) => buildFoodEntry(item));
+  const totals = sumFoodEntries(items);
+  return res.json({ success: true, data: { items, totals } });
+});
+
 export const addSupplement = asyncHandler(async (req, res) => {
+  const catalogItem = req.body.supplementId ? getSupplementById(req.body.supplementId) : null;
+  if (req.body.supplementId && !catalogItem) {
+    throw httpError(404, 'SUPPLEMENT_NOT_FOUND', 'Supplement was not found.');
+  }
+  if (catalogItem && req.body.unit !== catalogItem.unit) {
+    throw httpError(422, 'SUPPLEMENT_UNIT_MISMATCH', `Unit must be ${catalogItem.unit} for this supplement.`);
+  }
+  const vitamins = catalogItem
+    ? {
+      vitaminD: catalogItem.vitaminKey === 'vitaminD' ? req.body.dosage : 0,
+      b12: catalogItem.vitaminKey === 'b12' ? req.body.dosage : 0,
+      iron: catalogItem.vitaminKey === 'iron' ? req.body.dosage : 0,
+      calcium: catalogItem.vitaminKey === 'calcium' ? req.body.dosage : 0,
+    }
+    : req.body.vitamins;
   const supplement = await SupplementLog.create({
     userId: req.user.id,
     date: getTodayDateKey(),
-    supplementName: req.body.supplementName,
-    vitamins: req.body.vitamins,
+    supplementName: catalogItem?.name ?? req.body.supplementName,
+    ...(catalogItem ? {
+      supplementId: catalogItem.id,
+      dosage: req.body.dosage,
+      unit: catalogItem.unit,
+    } : {}),
+    vitamins,
   });
   return res.status(201).json({
     success: true,
@@ -38,6 +66,9 @@ export const addSupplement = asyncHandler(async (req, res) => {
         id: supplement.id,
         date: supplement.date,
         supplementName: supplement.supplementName,
+        supplementId: supplement.supplementId,
+        dosage: supplement.dosage,
+        unit: supplement.unit,
         vitamins: supplement.vitamins,
       },
     },
@@ -86,7 +117,9 @@ export const getToday = asyncHandler(async (req, res) => {
     data: {
       date,
       meals,
-      supplements: supplements.map(({ _id, supplementName, vitamins }) => ({ id: _id, supplementName, vitamins })),
+      supplements: supplements.map(({ _id, supplementName, supplementId, dosage, unit, vitamins }) => ({
+        id: _id, supplementName, supplementId, dosage, unit, vitamins,
+      })),
       totals,
       micronutrients: {
         totals: micronutrientTotals,
@@ -117,4 +150,4 @@ export const removeFood = asyncHandler(async (req, res) => {
   });
 });
 
-export default { addFood, addSupplement, searchFoods, parseFoods, getToday, removeFood };
+export default { addFood, addSupplement, searchFoods, parseFoods, smartLog, getToday, removeFood };
