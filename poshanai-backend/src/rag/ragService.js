@@ -73,6 +73,34 @@ const allergyAliases = {
 
 const round = (value) => (value === null || value === undefined ? null : Math.round(Number(value) * 100) / 100);
 
+export function getFoodByIfctCode(ifctCode) {
+  const normalizedCode = String(ifctCode ?? '').trim().toUpperCase();
+  return foodRecords.find((food) => food.ifctCode.toUpperCase() === normalizedCode) ?? null;
+}
+
+export function searchIfctFoods(query, limit = 20) {
+  const normalizedQuery = String(query ?? '').trim().toLowerCase();
+  if (!normalizedQuery) return [];
+  return foodRecords
+    .filter((food) => food.foodName.toLowerCase().includes(normalizedQuery)
+      || food.ifctCode.toLowerCase().includes(normalizedQuery))
+    .slice(0, Math.max(1, Math.min(30, limit)))
+    .map((food) => ({
+      ifctCode: food.ifctCode,
+      foodName: food.foodName,
+      nutrients: {
+        calories: food.nutrients.calories,
+        protein: food.nutrients.protein,
+        carbs: food.nutrients.carbs,
+        fat: food.nutrients.fat,
+      },
+    }));
+}
+
+export function getIfctFoodCatalog() {
+  return foodRecords.map(({ ifctCode, foodName }) => ({ ifctCode, foodName }));
+}
+
 /**
  * Retrieves and ranks top 20-30 IFCT 2017 foods for target nutrient deficiencies,
  * filtered by user dietary preference, excluding allergens, and prioritizing regional foods.
@@ -147,6 +175,9 @@ export function getMedicalDisclaimer() {
 
 export default {
   retrieveFoodsForDeficiencies,
+  getFoodByIfctCode,
+  searchIfctFoods,
+  getIfctFoodCatalog,
   getMedicalDisclaimer,
   buildMealPlanPrompt,
   supportedRegions,

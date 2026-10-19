@@ -9,6 +9,7 @@ const registerSchema = Joi.object({
   gender: Joi.string().valid('male', 'female', 'other').optional(),
   weightKg: Joi.number().min(20).max(200).optional(),
   heightCm: Joi.number().min(100).max(250).optional(),
+  activityLevel: Joi.string().valid('sedentary', 'moderate', 'active').optional(),
   dietType: Joi.string().valid('veg', 'non-veg', 'vegan', 'eggetarian').optional(),
   region: Joi.string().optional(),
   consent: Joi.alternatives()
