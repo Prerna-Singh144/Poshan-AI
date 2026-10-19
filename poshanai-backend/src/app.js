@@ -12,6 +12,8 @@ import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import lifestyleRoutes from './routes/lifestyleRoutes.js';
+import foodRoutes from './routes/foodRoutes.js';
+import logRoutes from './routes/logRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import requestLogger from './middleware/requestLogger.js';
 import { getHealthStatus } from './services/healthService.js';
@@ -55,6 +57,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/lifestyle', lifestyleRoutes);
+app.use('/api/foods', foodRoutes);
+app.use('/api/logs', logRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
