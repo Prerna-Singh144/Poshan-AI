@@ -34,8 +34,9 @@ function publicEntry(entry) {
 
 export const searchFoodCatalog = asyncHandler(async (req, res) => {
   assertCatalogLoaded();
-  const foods = searchFoods(req.query.q, req.query.limit);
-  return res.json({ success: true, data: { foods } });
+  const foods = searchFoods(req.query.q, Math.min(Number(req.query.limit) || 20, 20))
+    .map(({ nutrients, ...food }) => ({ ...food, ...nutrients, nutrients }));
+  return res.json({ success: true, data: foods });
 });
 
 export const addFood = asyncHandler(async (req, res) => {

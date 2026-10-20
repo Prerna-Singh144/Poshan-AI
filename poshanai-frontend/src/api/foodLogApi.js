@@ -2,7 +2,16 @@ import client, { payloadFrom } from './client.js';
 
 export async function searchFoods(query, { signal } = {}) {
   const data = payloadFrom(await client.get('/foods/search', { params: { q: query, limit: 8 }, signal }));
-  return data.foods;
+  const foods = Array.isArray(data) ? data : data.foods;
+  return foods.map((food) => ({
+    ...food,
+    nutrients: food.nutrients ?? {
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+    },
+  }));
 }
 
 export async function getTodayLog(date, { signal } = {}) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks.js';
 import { addFoodEntry, fetchTodayLog, selectFoodLog, selectTotals } from '../store/slices/foodLogSlice.js';
 import { Button, Card, Skeleton, useToast } from '../components/common/index.js';
@@ -32,13 +32,27 @@ function TrackerSkeleton() {
 export default function CalorieTracker() {
   const dispatch = useAppDispatch();
   const toast = useToast();
-  const { entries, status, error } = useAppSelector(selectFoodLog);
+  const { entries, status } = useAppSelector(selectFoodLog);
   const totals = useAppSelector(selectTotals);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadTodayLog = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await dispatch(fetchTodayLog(todayDateString())).unwrap();
+    } catch {
+      // Keep request details and potentially sensitive server errors out of browser logs.
+      console.error('Daily log request failed.');
+      toast('Could not load daily logs. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dispatch, toast]);
 
   useEffect(() => {
-    dispatch(fetchTodayLog(todayDateString()));
-  }, [dispatch]);
+    void loadTodayLog();
+  }, [loadTodayLog]);
 
   // Optimistic: the modal closes and the rings/bars update at once. If the server rejects the
   // entry the slice rolls it back and we tell the user.
@@ -61,14 +75,14 @@ export default function CalorieTracker() {
         <Button className="w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>+ Add food</Button>
       </header>
 
-      {status === 'loading' || status === 'idle' ? <TrackerSkeleton /> : null}
+      {isLoading || status === 'loading' || status === 'idle' ? <TrackerSkeleton /> : null}
 
       {status === 'error' && (
         <Card className="mt-6 text-center" role="alert">
           <p className="text-3xl" aria-hidden="true">⚠️</p>
           <p className="mt-2 font-semibold text-slate-900 dark:text-white">We could not load today’s log.</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{error}</p>
-          <Button className="mt-4" onClick={() => dispatch(fetchTodayLog(todayDateString()))}>Try again</Button>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Could not load daily logs. Please try again.</p>
+          <Button className="mt-4" onClick={() => void loadTodayLog()}>Try again</Button>
         </Card>
       )}
 
