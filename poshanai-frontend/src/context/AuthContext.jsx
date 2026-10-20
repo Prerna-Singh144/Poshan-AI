@@ -2,10 +2,14 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState } from
 import {
   login as apiLogin,
   logout as apiLogout,
-  refresh as apiRefresh,
   register as apiRegister,
 } from '../api/authApi.js';
-import { getAccessToken, setAccessToken, subscribeAccessToken } from '../api/client.js';
+import {
+  getAccessToken,
+  refreshAccessToken,
+  setAccessToken,
+  subscribeAccessToken,
+} from '../api/client.js';
 import { clearAllCache } from '../utils/memoryCache.js';
 
 export const AuthContext = createContext(null);
@@ -69,7 +73,7 @@ export function AuthProvider({ children }) {
   const refresh = useCallback(async () => {
     const requestVersion = sessionVersion.current;
     try {
-      const session = await apiRefresh();
+      const session = await refreshAccessToken();
       if (!session.accessToken)
         throw new Error('Refresh response did not include an access token.');
       if (requestVersion === sessionVersion.current) setSession(session);
@@ -155,7 +159,7 @@ export function AuthProvider({ children }) {
     let active = true;
     const requestVersion = sessionVersion.current;
     if (hasRefreshCookie()) {
-      apiRefresh()
+      refreshAccessToken()
         .then((session) => {
           if (active && requestVersion === sessionVersion.current && session.accessToken) setSession(session);
         })

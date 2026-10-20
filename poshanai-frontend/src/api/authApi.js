@@ -1,7 +1,5 @@
 import client, { payloadFrom, setAccessToken } from './client.js';
 
-let refreshRequest = null;
-
 function readSession(response) {
   const payload = payloadFrom(response);
   const token = payload?.accessToken ?? payload?.access_token ?? payload?.token ?? null;
@@ -24,17 +22,5 @@ export async function logout() {
   }
 }
 
-export async function refresh() {
-  if (!refreshRequest) {
-    refreshRequest = client
-      .post('/auth/refresh', null, { _skipAuthRefresh: true })
-      .then(readSession)
-      .finally(() => {
-        refreshRequest = null;
-      });
-  }
-  return refreshRequest;
-}
-
-const authApi = { login, register, logout, refresh };
+const authApi = { login, register, logout };
 export default authApi;
