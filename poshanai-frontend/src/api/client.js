@@ -7,12 +7,39 @@ const client = create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-let accessToken = null;
+export const ACCESS_TOKEN_STORAGE_KEY = 'token';
+const LEGACY_ACCESS_TOKEN_STORAGE_KEY = 'poshanai.accessToken';
+
+function readStoredAccessToken() {
+  try {
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (token) return token;
+
+    const legacyToken = localStorage.getItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
+    if (legacyToken) {
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, legacyToken);
+      localStorage.removeItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
+    }
+    return legacyToken;
+  } catch {
+    return null;
+  }
+}
+
+let accessToken = readStoredAccessToken();
 let refreshPromise = null;
 const tokenListeners = new Set();
 
 export function setAccessToken(token) {
   accessToken = token || null;
+  try {
+    if (accessToken) localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+    else localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch {
+    if (import.meta.env.DEV) {
+      console.warn('[auth] Browser storage unavailable; session persistence may fail.');
+    }
+  }
   tokenListeners.forEach((listener) => listener(accessToken));
 }
 
@@ -90,9 +117,10 @@ async function refreshAccessToken() {
 }
 
 client.interceptors.request.use((config) => {
-  if (accessToken) {
+  const token = accessToken || readStoredAccessToken();
+  if (token) {
     config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${accessToken}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -126,7 +154,6 @@ client.interceptors.response.use(
       setAccessToken(null);
       redirectToLogin();
     }
-    if (status === 403) redirectToLogin();
     return Promise.reject(normalizeApiError(error));
   },
 );

@@ -5,13 +5,32 @@ import {
   refresh as apiRefresh,
   register as apiRegister,
 } from '../api/authApi.js';
-import { setAccessToken, subscribeAccessToken } from '../api/client.js';
+import { getAccessToken, setAccessToken, subscribeAccessToken } from '../api/client.js';
 import { clearAllCache } from '../utils/memoryCache.js';
 
 export const AuthContext = createContext(null);
+const USER_STORAGE_KEY = 'user';
+const LEGACY_USER_STORAGE_KEY = 'poshanai.user';
 
 function hasRefreshCookie() {
   return document.cookie.split(';').some((cookie) => cookie.trim().startsWith('refreshTokenPresent='));
+}
+
+function readStoredUser() {
+  try {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY) ?? localStorage.getItem(LEGACY_USER_STORAGE_KEY);
+    return storedUser ? JSON.parse(storedUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isStored(key) {
+  try {
+    return localStorage.getItem(key) !== null;
+  } catch {
+    return false;
+  }
 }
 
 function getRefreshDelay(token) {
@@ -25,54 +44,93 @@ function getRefreshDelay(token) {
 }
 
 export function AuthProvider({ children }) {
-  const [accessToken, setToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(() => hasRefreshCookie());
+  const [accessToken, setToken] = useState(getAccessToken);
+  const [user, setUser] = useState(readStoredUser);
+  const [isLoading, setIsLoading] = useState(
+    () => hasRefreshCookie() && (!getAccessToken() || !readStoredUser()),
+  );
   const refreshTimer = useRef(null);
+  const sessionVersion = useRef(0);
   const setSession = useCallback(({ accessToken: nextToken, user: nextUser }) => {
     if (!nextToken) clearAllCache();
     setAccessToken(nextToken);
     setToken(nextToken || null);
     setUser(nextToken ? nextUser : null);
+    try {
+      if (nextToken && nextUser) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+      else localStorage.removeItem(USER_STORAGE_KEY);
+    } catch {
+      if (import.meta.env.DEV) {
+        console.warn('[auth] Browser storage unavailable; user state will not persist.');
+      }
+    }
   }, []);
 
   const refresh = useCallback(async () => {
+    const requestVersion = sessionVersion.current;
     try {
       const session = await apiRefresh();
       if (!session.accessToken)
         throw new Error('Refresh response did not include an access token.');
-      setSession(session);
+      if (requestVersion === sessionVersion.current) setSession(session);
       return session;
     } catch (error) {
-      setSession({ accessToken: null, user: null });
+      if (requestVersion === sessionVersion.current) setSession({ accessToken: null, user: null });
       throw error;
     }
   }, [setSession]);
 
   const login = useCallback(
     async (credentials) => {
-      const session = await apiLogin(credentials);
-      if (!session.accessToken) throw new Error('Login response did not include an access token.');
-      clearAllCache();
-      setSession(session);
-      return session.user;
+      const requestVersion = ++sessionVersion.current;
+      try {
+        const session = await apiLogin(credentials);
+        if (!session.accessToken) throw new Error('Login response did not include an access token.');
+        if (requestVersion !== sessionVersion.current) return null;
+        clearAllCache();
+        setSession(session);
+        if (import.meta.env.DEV) {
+          console.info('[auth] login session persistence', {
+            origin: window.location.origin,
+            tokenSaved: isStored('token'),
+            userSaved: isStored(USER_STORAGE_KEY),
+          });
+        }
+        setIsLoading(false);
+        return session.user;
+      } catch (error) {
+        if (requestVersion === sessionVersion.current) setIsLoading(false);
+        throw error;
+      }
     },
     [setSession],
   );
 
   const register = useCallback(
     async (details) => {
-      const session = await apiRegister(details);
-      if (session.accessToken) {
-        clearAllCache();
-        setSession(session);
+      const requestVersion = ++sessionVersion.current;
+      try {
+        const session = await apiRegister(details);
+        if (requestVersion !== sessionVersion.current) {
+          return { user: null, isAuthenticated: Boolean(accessToken) };
+        }
+        if (session.accessToken) {
+          clearAllCache();
+          setSession(session);
+        }
+        setIsLoading(false);
+        return { user: session.user, isAuthenticated: Boolean(session.accessToken) };
+      } catch (error) {
+        if (requestVersion === sessionVersion.current) setIsLoading(false);
+        throw error;
       }
-      return { user: session.user, isAuthenticated: Boolean(session.accessToken) };
     },
-    [setSession],
+    [accessToken, setSession],
   );
 
   const logout = useCallback(async () => {
+    sessionVersion.current += 1;
+    setIsLoading(false);
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
     try {
       await apiLogout();
@@ -84,19 +142,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = subscribeAccessToken((token) => {
       setToken(token);
-      if (!token) clearAllCache();
+      if (!token) {
+        setUser(null);
+        try {
+          localStorage.removeItem(USER_STORAGE_KEY);
+        } catch {
+          // Ignore unavailable browser storage.
+        }
+        clearAllCache();
+      }
     });
     let active = true;
+    const requestVersion = sessionVersion.current;
     if (hasRefreshCookie()) {
       apiRefresh()
         .then((session) => {
-          if (active && session.accessToken) setSession(session);
+          if (active && requestVersion === sessionVersion.current && session.accessToken) setSession(session);
         })
         .catch(() => {
-          if (active) setSession({ accessToken: null, user: null });
+          if (active && requestVersion === sessionVersion.current && !getAccessToken()) {
+            setSession({ accessToken: null, user: null });
+          }
         })
         .finally(() => {
-          if (active) setIsLoading(false);
+          if (active && requestVersion === sessionVersion.current) setIsLoading(false);
         });
     }
     return () => {

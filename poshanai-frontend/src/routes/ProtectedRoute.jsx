@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   if (isLoading)
     return (
@@ -14,6 +14,8 @@ export default function ProtectedRoute({ children }) {
         <span className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-700 border-t-transparent" />
       </div>
     );
-  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!isLoading && (!isAuthenticated || !user)) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
   return children ?? <Outlet />;
 }

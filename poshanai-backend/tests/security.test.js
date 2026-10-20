@@ -218,7 +218,7 @@ describe('Security & Threat Mitigation Suite', () => {
           .set('X-Forwarded-For', '198.51.100.43');
       }
 
-      assert.equal(lastResponse.status, 401);
+      assert.equal(lastResponse.status, 200);
     });
 
     it('does not throttle auth requests during tests', async () => {

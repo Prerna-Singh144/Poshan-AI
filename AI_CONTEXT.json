@@ -107,6 +107,10 @@
       "poshanai-backend/": "Express API and MongoDB integration.",
       "ai-service/": "Reserved OCR, RAG, and pose extension directories; no active Python service.",
       "nginx/": "Nginx configuration.",
+      "docs/": "Contributor documentation, security checklist, and architecture notes.",
+      "docs/architecture/BACKEND_ARCHITECTURE.md": "Detailed backend architecture and implementation reference.",
+      "artifacts/": "Local generated review artifacts; contents are not required to build or run the application.",
+      ".worktrees/": "Local Git worktrees; each worktree is an independent checkout and is not part of the primary application source tree.",
       "docker-compose.yml": "Local container orchestration.",
       "docker-compose.prod.yml": "Production-oriented container orchestration.",
       "AI_CONTEXT.json": "Repository-grounded project context."
@@ -274,14 +278,14 @@
       {
         "method": "GET",
         "path": "/api/foods?q={query}",
-        "auth": "Access token",
-        "response": "Returns up to 20 IFCT food matches with per-100 g macros and optional servingUnits.",
+        "auth": "No; public read-only IFCT catalogue data.",
+        "response": "Returns a data array of up to 20 IFCT food matches with flat per-100 g calories/protein/carbs/fat, optional servingUnits, and a nutrients object for the frontend.",
         "status": "Implemented."
       },
       {
         "method": "GET",
         "path": "/api/foods/search?q={query}",
-        "auth": "Access token",
+        "auth": "No; public read-only IFCT catalogue data.",
         "status": "Implemented as a compatibility alias for /api/foods."
       },
       {

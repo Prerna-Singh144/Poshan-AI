@@ -83,27 +83,27 @@ const add = (token, body) => request(app).post('/api/logs/add-food').set('Author
 const day = (token, date = today) => request(app).get('/api/logs/today').query({ date }).set('Authorization', `Bearer ${token}`);
 const search = (token, q) => request(app).get('/api/foods/search').query({ q }).set('Authorization', `Bearer ${token}`);
 
-test('all food and log routes require authentication', async () => {
-  assert.equal((await request(app).get('/api/foods?q=egg')).status, 401);
-  assert.equal((await request(app).get('/api/foods/search?q=rice')).status, 401);
+test('food catalogue is public while user food logs require authentication', async () => {
+  assert.equal((await request(app).get('/api/foods?q=egg')).status, 200);
+  assert.equal((await request(app).get('/api/foods/search?q=rice')).status, 200);
   assert.equal((await request(app).post('/api/logs/add-food').send({})).status, 401);
   assert.equal((await request(app).get(`/api/logs/today?date=${today}`)).status, 401);
 });
 
 test('GET /api/foods?q=egg returns serving units and keeps the search alias', async () => {
-  const res = await request(app).get('/api/foods').query({ q: 'egg' }).set('Authorization', `Bearer ${tokenA}`);
+  const res = await request(app).get('/api/foods').query({ q: 'egg' });
   assert.equal(res.status, 200);
-  const egg = res.body.data.foods.find((food) => food.ifctCode === 'M001');
+  const egg = res.body.data.find((food) => food.ifctCode === 'M001');
   assert.deepEqual(egg.servingUnits, { small: 40, medium: 45, large: 50, defaultUnit: 'large' });
-  assert.equal((await search(tokenA, 'rice')).status, 200);
-  assert.equal((await request(app).get('/api/foods').set('Authorization', `Bearer ${tokenA}`)).status, 400);
+  assert.equal((await request(app).get('/api/foods/search').query({ q: 'rice' })).status, 200);
+  assert.equal((await request(app).get('/api/foods')).status, 400);
 });
 
 test('GET /api/foods/search returns IFCT foods and validates the query', async () => {
   const res = await search(tokenA, 'rice');
   assert.equal(res.status, 200);
-  assert.ok(res.body.data.foods.length > 0);
-  assert.ok(res.body.data.foods.every((f) => f.ifctCode && f.nutrients.calories > 0));
+  assert.ok(res.body.data.length > 0);
+  assert.ok(res.body.data.every((f) => f.ifctCode && f.calories > 0 && f.nutrients.calories > 0));
   assert.equal((await search(tokenA, 'r')).status, 400);
   assert.equal((await request(app).get('/api/foods/search').set('Authorization', `Bearer ${tokenA}`)).status, 400);
 });

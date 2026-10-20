@@ -15,6 +15,15 @@ function nextIp() {
   return `10.0.1.${((ipCounter++ - 1) % 250) + 1}`;
 }
 
+function assertRefreshCookie(res) {
+  const cookies = res.headers['set-cookie'] ?? [];
+  const cookie = cookies.find((value) => value.startsWith(`${env.refreshCookieName}=`));
+  assert.ok(cookie, 'refresh cookie should be present');
+  assert.match(cookie, /;\s*Path=\//i);
+  assert.match(cookie, /;\s*HttpOnly(?:;|$)/i);
+  assert.match(cookie, /;\s*SameSite=Lax(?:;|$)/i);
+}
+
 before(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
@@ -44,9 +53,7 @@ describe('Authentication API (/api/auth)', () => {
       assert.equal(res.body.data.user.email, 'alice@example.com');
       assert.equal(res.body.data.user.name, 'Alice Smith');
 
-      const cookies = res.headers['set-cookie'];
-      assert.ok(cookies);
-      assert.ok(cookies.some((c) => c.includes(env.refreshCookieName)));
+      assertRefreshCookie(res);
     });
 
     it('rejects duplicate email registration with 409 EMAIL_IN_USE', async () => {
@@ -151,6 +158,7 @@ describe('Authentication API (/api/auth)', () => {
       assert.equal(res.body.success, true);
       assert.ok(res.body.data.accessToken);
       assert.equal(res.body.data.user.email, 'charlie@example.com');
+      assertRefreshCookie(res);
     });
 
     it('rejects wrong password with 401 INVALID_CREDENTIALS', async () => {
