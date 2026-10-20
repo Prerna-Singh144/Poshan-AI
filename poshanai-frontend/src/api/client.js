@@ -1,7 +1,7 @@
 import { create } from 'axios';
 
 const client = create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   withCredentials: true,
   timeout: 15_000,
   headers: { 'Content-Type': 'application/json' },
@@ -99,15 +99,19 @@ export function getApiError(error) {
   return error.apiError?.message ?? normalizeApiError(error).message;
 }
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = client
       .post('/auth/refresh', null, { _skipAuthRefresh: true })
       .then((response) => {
-        const nextToken = tokenFrom(response);
-        if (!nextToken) throw new Error('Refresh response did not include an access token.');
-        setAccessToken(nextToken);
-        return nextToken;
+        const payload = payloadFrom(response);
+        const session = {
+          accessToken: tokenFrom(response),
+          user: payload?.user ?? null,
+        };
+        if (!session.accessToken) throw new Error('Refresh response did not include an access token.');
+        setAccessToken(session.accessToken);
+        return session;
       })
       .finally(() => {
         refreshPromise = null;
@@ -140,9 +144,9 @@ client.interceptors.response.use(
     ) {
       config._retry = true;
       try {
-        const nextToken = await refreshAccessToken();
+        const session = await refreshAccessToken();
         config.headers = config.headers ?? {};
-        config.headers.Authorization = `Bearer ${nextToken}`;
+        config.headers.Authorization = `Bearer ${session.accessToken}`;
         return client(config);
       } catch {
         setAccessToken(null);

@@ -325,16 +325,24 @@ export default function CalorieTracker() {
 
   const handleAddSupplement = async (event) => {
     event.preventDefault();
+    const vitaminsToAdd = Object.fromEntries(Object.entries(vitamins).map(([key, value]) => [key, Number(value || 0)]));
+    const temporaryId = `pending-supplement-${Date.now()}`;
+    const optimisticSupplement = { id: temporaryId, supplementName, vitamins: vitaminsToAdd, pending: true };
+    setToday((current) => ({ ...current, supplements: [...current.supplements, optimisticSupplement] }));
     setSavingSupplement(true);
     setSupplementError('');
+    let saved = false;
     try {
-      await addSupplementToLog({
-        supplementName,
-        vitamins: Object.fromEntries(Object.entries(vitamins).map(([key, value]) => [key, Number(value || 0)])),
-      });
-      await refresh();
+      await addSupplementToLog({ supplementName, vitamins: vitaminsToAdd });
+      saved = true;
       setSupplementModalOpen(false);
+      try {
+        await refresh();
+      } catch (error) {
+        setLoadError(error.message || 'The supplement was saved, but today’s log could not be refreshed.');
+      }
     } catch (error) {
+      if (!saved) setToday((current) => ({ ...current, supplements: current.supplements.filter((item) => item.id !== temporaryId) }));
       setSupplementError(error.message || 'Could not log this supplement.');
     } finally {
       setSavingSupplement(false);

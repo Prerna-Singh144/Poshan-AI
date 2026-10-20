@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
+import dietPlanRoutes from './routes/dietPlanRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
@@ -52,6 +53,7 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use('/api', apiLimiter);
 
+// Public liveness/readiness probe; it returns service status only.
 app.get('/health', async (_req, res, next) => {
   try {
     const health = await getHealthStatus();
@@ -61,22 +63,29 @@ app.get('/health', async (_req, res, next) => {
   }
 });
 
-// Mount all routes (Combined)
-app.use('/api/auth', authRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/mealplans', mealPlanRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/lifestyle', lifestyleRoutes);
-app.use('/api/foods', foodRoutes);
-app.use('/api/calories', calorieRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/supplements', supplementRoutes);
-app.use('/api/experts', expertRoutes);
+const apiRoutes = [
+  ['/auth', authRoutes],
+  ['/reports', reportRoutes],
+  ['/mealplans', mealPlanRoutes],
+  ['/diet-plans', dietPlanRoutes],
+  ['/users', userRoutes],
+  ['/admin', adminRoutes],
+  ['/lifestyle', lifestyleRoutes],
+  ['/foods', foodRoutes],
+  ['/calories', calorieRoutes],
+  ['/notifications', notificationRoutes],
+  ['/supplements', supplementRoutes],
+  ['/experts', expertRoutes],
+  ['/logs', logRoutes],
+  ['/logs', dailyLogRoutes],
+  ['/daily-logs', dailyLogRoutes],
+];
 
-app.use('/api/logs', logRoutes);
-app.use('/api/logs', dailyLogRoutes);
-app.use('/api/daily-logs', dailyLogRoutes);
+// /api/v1 is canonical. Keep /api as a compatibility alias for existing clients.
+for (const [path, router] of apiRoutes) {
+  app.use(`/api/v1${path}`, router);
+  app.use(`/api${path}`, router);
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);

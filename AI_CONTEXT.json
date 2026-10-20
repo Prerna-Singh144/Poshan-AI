@@ -194,7 +194,7 @@
     ]
   },
   "api_contract": {
-    "base_path": "/api",
+    "base_path": "/api/v1",
     "response_envelopes": {
       "success": "{ success: true, data: ... }",
       "error": "{ success: false, error: { code, message } }"
@@ -378,7 +378,7 @@
         "status": "Implemented; requires plan ownership."
       }
     ],
-    "routing_note": "Meal-plan API and frontend client use /api/mealplans. The frontend generation request must include reportId and may include preferences."
+    "routing_note": "The canonical API prefix is /api/v1. The backend keeps /api as a compatibility alias. Meal-plan routes are available at /api/v1/mealplans and the frontend uses that versioned prefix. Generation requests include reportId and may include preferences."
   },
   "database_schema": {
     "User": {

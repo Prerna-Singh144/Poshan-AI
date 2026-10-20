@@ -2,17 +2,12 @@ import AuditLog from '../models/AuditLog.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const getAuditLogs = asyncHandler(async (req, res) => {
-  const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+  const { page, limit, action, userId } = req.validatedQuery;
   const skip = (page - 1) * limit;
 
   const filter = {};
-  if (req.query.action) {
-    filter.action = req.query.action;
-  }
-  if (req.query.userId) {
-    filter.userId = req.query.userId;
-  }
+  if (action) filter.action = action;
+  if (userId) filter.userId = userId;
 
   const [logs, total] = await Promise.all([
     AuditLog.find(filter)

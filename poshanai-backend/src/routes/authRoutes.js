@@ -32,6 +32,7 @@ const loginLimiter = process.env.NODE_ENV === 'test'
   },
   });
 
+// Registration and login are public; refresh and logout are authorized by the HTTP-only refresh cookie.
 router.post('/register', registerLimiter, validateRegister, authController.register);
 router.post('/login', loginLimiter, validateLogin, authController.login);
 router.post('/refresh', validateEmptyBody, authController.refresh);

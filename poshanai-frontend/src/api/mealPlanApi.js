@@ -9,6 +9,10 @@ export async function getMealPlan(id) {
   return payloadFrom(await client.get(`/mealplans/${encodeURIComponent(id)}`));
 }
 
+export async function getMealPlanJobStatus(jobId) {
+  return payloadFrom(await client.get(`/mealplans/jobs/${encodeURIComponent(jobId)}`));
+}
+
 export async function generateMealPlan(request) {
   return payloadFrom(await client.post('/mealplans/generate', request));
 }

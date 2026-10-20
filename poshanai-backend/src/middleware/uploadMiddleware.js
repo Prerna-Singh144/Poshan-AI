@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, open, rm } from 'node:fs/promises';
+import { chmod, mkdir, open, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import multer from 'multer';
 import { uploadFile, deleteFile } from '../services/storageService.js';
@@ -20,7 +20,9 @@ const signaturesByMimeType = new Map([
 
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => {
-    mkdir(stagingDirectory, { recursive: true }).then(
+    mkdir(stagingDirectory, { recursive: true, mode: 0o700 }).then(
+      () => chmod(stagingDirectory, 0o700),
+    ).then(
       () => callback(null, stagingDirectory),
       callback,
     );

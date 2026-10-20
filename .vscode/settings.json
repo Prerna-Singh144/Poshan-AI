@@ -1,0 +1,20 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.worktrees": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.env": true,
+    "**/*.log": true,
+    "**/artifacts": true
+  },
+  "search.exclude": {
+    "**/.worktrees": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/artifacts": true
+  },
+  "files.trimTrailingWhitespace": true,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2
+}

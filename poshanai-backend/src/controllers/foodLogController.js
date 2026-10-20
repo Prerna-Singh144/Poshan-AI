@@ -102,4 +102,22 @@ export const getDailyLog = asyncHandler(async (req, res) => {
   });
 });
 
-export default { searchFoodCatalog, addFood, getDailyLog };
+export const listLogs = asyncHandler(async (req, res) => {
+  const { date, page, limit } = req.pagination;
+  const filter = { userId: req.user._id, date };
+  // The daily entry limit is 100; one indexed read preserves encrypted fields while slicing.
+  const allEntries = await FoodLog.find(filter).sort({ createdAt: 1 });
+  const total = allEntries.length;
+  const entries = allEntries.slice((page - 1) * limit, page * limit);
+  return res.json({
+    success: true,
+    data: {
+      date,
+      entries: entries.map(publicEntry),
+      totals: sumNutrients(allEntries.map((item) => item.toObject())),
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    },
+  });
+});
+
+export default { searchFoodCatalog, addFood, getDailyLog, listLogs };

@@ -5,6 +5,7 @@ import logger from './utils/logger.js';
 import { closeOcrQueue } from './jobs/queue.js';
 import { closeHealthRedis } from './services/healthService.js';
 import { runAllSweepers } from './jobs/sweeper.js';
+import { closeMealPlanQueue } from './jobs/mealPlanQueue.js';
 
 let server;
 let shuttingDown = false;
@@ -38,7 +39,7 @@ async function shutdown(reason, error) {
     await new Promise((resolve) => server.close(resolve));
   }
 
-  await Promise.all([closeOcrQueue(), closeHealthRedis()]);
+  await Promise.all([closeOcrQueue(), closeMealPlanQueue(), closeHealthRedis()]);
   process.exit(1);
 }
 
@@ -55,7 +56,7 @@ async function gracefulShutdown() {
   shuttingDown = true;
   if (maintenanceTimer) clearInterval(maintenanceTimer);
   if (server) await new Promise((resolve) => server.close(resolve));
-  await Promise.all([closeOcrQueue(), closeHealthRedis()]);
+  await Promise.all([closeOcrQueue(), closeMealPlanQueue(), closeHealthRedis()]);
   process.exit(0);
 }
 

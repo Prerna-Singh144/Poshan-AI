@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import logo from '../assets/logo.svg';
 import { ReactLenis } from 'lenis/dist/lenis-react.mjs';
 const StickyCards = lazy(() => import('../components/ui/StickyCards.jsx'));
+const KoiStudies = lazy(() => import('../components/ui/KoiStudies.jsx'));
 
 function BalancedPlate() {
   return (
@@ -110,6 +111,7 @@ export default function Landing() {
         <span className="hero-index" aria-hidden="true">01 / 03</span>
       </section>
 
+      <Suspense fallback={<section className="ingredient-study" aria-label="Nutrition ingredient cards" />}><KoiStudies /></Suspense>
       <Suspense fallback={<section className="sticky-features" aria-label="PoshanAI features" />}><StickyCards /></Suspense>
       <footer className="landing-footer">
         <Link to="/" className="footer-brand">poshan<span>ai</span></Link>

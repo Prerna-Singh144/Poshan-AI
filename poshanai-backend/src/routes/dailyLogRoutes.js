@@ -1,16 +1,14 @@
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import * as dailyLogController from '../controllers/dailyLogController.js';
 import validationError from '../utils/validationError.js';
 import { getSupplementIds } from '../services/supplementCatalogService.js';
 import { MICRONUTRIENTS } from '../config/constants.js';
+import { sensitiveRateLimiter } from '../middleware/sensitiveRateLimiter.js';
 
 const router = Router();
-const aiLimiter = process.env.NODE_ENV === 'test'
-  ? (_req, _res, next) => next()
-  : rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+const aiLimiter = sensitiveRateLimiter({ name: 'ai-food-requests', windowMs: 60 * 60 * 1000, limit: 10 });
 const addFoodSchema = Joi.object({
   mealType: Joi.string().valid('breakfast', 'lunch', 'dinner', 'snack').required(),
   ifctCode: Joi.string().trim().uppercase().min(1).max(20).required(),

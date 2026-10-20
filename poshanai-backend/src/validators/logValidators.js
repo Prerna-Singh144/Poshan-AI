@@ -45,6 +45,11 @@ const addFoodSchema = Joi.object({
   .required();
 
 const todaySchema = Joi.object({ date: dateField }).unknown(false);
+const logListSchema = Joi.object({
+  date: dateField,
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(10),
+}).unknown(false);
 
 function validate(schema, source) {
   return (req, _res, next) => {
@@ -58,3 +63,9 @@ function validate(schema, source) {
 export const validateFoodSearch = validate(searchSchema, 'query');
 export const validateAddFood = validate(addFoodSchema, 'body');
 export const validateTodayLog = validate(todaySchema, 'query');
+export function validateLogPagination(req, _res, next) {
+  const { error, value } = logListSchema.validate(req.query ?? {}, { abortEarly: false, convert: true, stripUnknown: true });
+  if (error) return next(validationError());
+  req.pagination = value;
+  return next();
+}

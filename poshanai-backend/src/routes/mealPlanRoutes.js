@@ -1,15 +1,13 @@
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import * as mealPlanController from '../controllers/mealPlanController.js';
 import { supportedRegions } from '../rag/ragService.js';
 import validationError from '../utils/validationError.js';
+import { sensitiveRateLimiter } from '../middleware/sensitiveRateLimiter.js';
 
 const router = Router();
-const generationLimiter = process.env.NODE_ENV === 'test'
-  ? (_req, _res, next) => next()
-  : rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false });
+const generationLimiter = sensitiveRateLimiter({ name: 'meal-plan-generation', windowMs: 60 * 60 * 1000, limit: 5 });
 const allergyOptions = [
   'nuts', 'peanut', 'peanuts', 'dairy', 'milk', 'eggs', 'egg', 'fish', 'shellfish',
   'soy', 'gluten', 'wheat', 'legumes', 'poultry', 'mushrooms', 'sesame', 'seeds',
@@ -32,6 +30,7 @@ const generateSchema = Joi.object({
   preferences: preferencesSchema,
 }).unknown(false);
 const idSchema = Joi.object({ id: Joi.string().hex().length(24).required() }).unknown(false);
+const jobIdSchema = Joi.object({ jobId: Joi.string().guid({ version: ['uuidv4'] }).required() }).unknown(false);
 const statusSchema = Joi.object({
   status: Joi.string().valid('active', 'completed').required(),
 }).unknown(false);
@@ -61,6 +60,7 @@ router.post(
   mealPlanController.generate,
 );
 router.get('/', verifyToken, validate(listSchema, 'query'), mealPlanController.list);
+router.get('/jobs/:jobId', verifyToken, validate(jobIdSchema, 'params'), mealPlanController.getGenerationStatus);
 router.get('/:id', verifyToken, validate(idSchema, 'params'), mealPlanController.getById);
 router.patch(
   '/:id/status',
