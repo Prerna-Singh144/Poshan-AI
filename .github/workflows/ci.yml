@@ -68,6 +68,7 @@ jobs:
         if: matrix.check == 'test'
         env:
           NODE_ENV: test
+          TRUST_PROXY_HOPS: 1
           MONGODB_URI: mongodb://127.0.0.1:27017/poshanai_test
           JWT_ACCESS_SECRET: ci-access-secret-that-is-long-enough-123
           JWT_REFRESH_SECRET: ci-refresh-secret-that-is-long-enough-456

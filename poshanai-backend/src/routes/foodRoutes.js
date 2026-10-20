@@ -5,6 +5,7 @@ import { validateFoodSearch } from '../validators/logValidators.js';
 
 const router = Router();
 
+router.get('/', verifyToken, validateFoodSearch, foodLogController.searchFoodCatalog);
 router.get('/search', verifyToken, validateFoodSearch, foodLogController.searchFoodCatalog);
 
 export default router;

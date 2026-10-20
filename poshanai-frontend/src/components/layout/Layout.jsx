@@ -10,6 +10,7 @@ const links = [
   { to: '/', label: '← Back to Home' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/calorie-tracker', label: 'Calorie tracker' },
+  { to: '/experts', label: 'Connect with experts' },
   { to: '/recommendations', label: 'Recommended tests' },
   { to: '/profile', label: 'Profile' },
   { to: '/upload', label: 'Upload report' },

@@ -10,6 +10,17 @@ import { testRules, validateTestRules } from '../src/services/testRules.js';
 
 let mongod;
 let ipCounter = 190;
+const validOnboarding = {
+  dietType: 'veg',
+  mealsPerDay: 3,
+  sleepHours: 7,
+  sleepTime: 'regular',
+  sunExposure: 'moderate',
+  activityLevel: 'moderate',
+  habits: ['none'],
+  symptoms: ['none'],
+  consent: true,
+};
 
 async function registerUser() {
   const ip = `10.0.3.${ipCounter++}`;
@@ -50,18 +61,19 @@ test('overwrites the authenticated user profile on repeat submissions without du
     .post('/api/lifestyle/onboarding')
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip)
-    .send({ age: 30, gender: 'female', weightKg: 62, heightCm: 165, dietType: 'veg', region: 'North' });
+    .send({ ...validOnboarding, age: 30, gender: 'female', weightKg: 62, heightCm: 165, region: 'North' });
   assert.equal(first.status, 200);
 
   const second = await request(app)
     .post('/api/lifestyle/onboarding')
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip)
-    .send({ age: 31, dietType: 'vegan' });
+    .send({ ...validOnboarding, age: 31, dietType: 'vegan' });
   assert.equal(second.status, 200);
   assert.equal(second.body.data.profile.id, first.body.data.profile.id);
   assert.deepEqual(second.body.data.profile.age, 31);
   assert.equal(second.body.data.profile.dietType, 'vegan');
+  assert.equal(second.body.data.profile.consent, true);
   assert.equal(Object.hasOwn(second.body.data.profile, 'gender'), false);
   assert.equal(Object.hasOwn(second.body.data.profile, 'userId'), false);
   assert.equal(Object.hasOwn(second.body.data.profile, 'email'), false);
@@ -75,7 +87,7 @@ test('rejects unknown questionnaire fields and invalid profile values', async ()
     .post('/api/lifestyle/onboarding')
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip)
-    .send({ age: 12, smoking: true });
+    .send({ ...validOnboarding, age: 12, smoking: true });
   assert.equal(response.status, 400);
   assert.equal(await LifestyleProfile.countDocuments(), 0);
 });

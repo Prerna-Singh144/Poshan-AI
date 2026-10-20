@@ -7,7 +7,7 @@ mongoose.connection.on('error', (error) => logger.error('MongoDB connection erro
 
 export async function connectDB() {
   try {
-    await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 5000 });
+    await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 5000, tls: env.mongoTls });
     logger.info('MongoDB connected');
     return mongoose.connection;
   } catch (error) {

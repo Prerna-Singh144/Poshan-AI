@@ -13,7 +13,7 @@ import { OCR_SETTINGS, UPLOAD_SETTINGS } from '../config/constants.js';
 import { flagBiomarkerValue, normalizeBiomarkerValue } from '../services/reportParser.js';
 import { logAuditEvent } from '../services/auditService.js';
 
-function publicReport(report, includeOcrText = false) {
+function publicReport(report) {
   const response = {
     id: String(report._id),
     fileType: report.fileType,
@@ -23,7 +23,6 @@ function publicReport(report, includeOcrText = false) {
     uploadedAt: report.uploadedAt,
     processedAt: report.processedAt,
   };
-  if (includeOcrText) response.rawOcrText = report.rawOcrText;
   return response;
 }
 
@@ -207,9 +206,9 @@ export const list = asyncHandler(async (req, res) => {
 });
 
 export const getById = asyncHandler(async (req, res) => {
-  const report = await Report.findOne({ _id: req.params.id, userId: req.user._id });
+  const report = await Report.findOne({ _id: req.params.id, userId: req.user._id }).select('-rawOcrText');
   if (!report) throw httpError(404, 'REPORT_NOT_FOUND', 'Report not found.');
-  const reportData = publicReport(report, true);
+  const reportData = publicReport(report);
   const downloadUrl = await getSignedUrl(report.fileUrl);
   if (downloadUrl) reportData.downloadUrl = downloadUrl;
   return res.json({ success: true, data: { report: reportData } });

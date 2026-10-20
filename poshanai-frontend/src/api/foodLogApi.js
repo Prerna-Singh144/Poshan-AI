@@ -9,8 +9,8 @@ export async function getTodayLog(date, { signal } = {}) {
   return payloadFrom(await client.get('/logs/today', { params: { date }, signal }));
 }
 
-export async function addFood({ ifctCode, grams, date }) {
-  return payloadFrom(await client.post('/logs/add-food', { ifctCode, grams, date }));
+export async function addFood({ ifctCode, quantity, measure, date }) {
+  return payloadFrom(await client.post('/logs/add-food', { ifctCode, quantity, measure, date }));
 }
 
 const foodLogApi = { searchFoods, getTodayLog, addFood };

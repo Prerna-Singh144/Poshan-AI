@@ -9,14 +9,26 @@ const baseLogger = winston.createLogger({
 });
 
 function write(level, message, metadata = {}, error) {
-  const fields = { ...metadata };
+  // Logs are operational telemetry, never a copy of request or health data.
+  const safeFields = ['method', 'path', 'status', 'durationMs', 'requestId', 'errorCode'];
+  const fields = Object.fromEntries(safeFields
+    .filter((key) => metadata?.[key] !== undefined)
+    .map((key) => [key, typeof metadata[key] === 'string'
+      ? metadata[key]
+        .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[REDACTED]')
+        .replace(/\b[a-f\d]{24}\b/gi, '[REDACTED]')
+      : metadata[key]]));
   const requestId = requestContext.getStore();
   if (requestId) fields.requestId = requestId;
   if (level === 'error' && error instanceof Error) {
-    fields.errorMessage = error.message;
-    fields.errorStack = error.stack;
+    fields.errorName = error.name;
+    if (typeof error.code === 'string' && /^[A-Z0-9_]{1,64}$/.test(error.code)) fields.errorCode = error.code;
   }
-  baseLogger.log(level, String(message), fields);
+  const safeMessage = String(message)
+    .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[REDACTED]')
+    .replace(/(?:mongodb(?:\+srv)?:\/\/|bearer\s+)[^\s"']+/gi, '[REDACTED]')
+    .replace(/\b[a-f\d]{24}\b/gi, '[REDACTED]');
+  baseLogger.log(level, safeMessage, fields);
 }
 
 export function runWithRequestId(requestId, callback) {

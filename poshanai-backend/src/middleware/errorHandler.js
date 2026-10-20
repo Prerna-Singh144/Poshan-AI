@@ -1,14 +1,15 @@
 import logger from '../utils/logger.js';
 import { env } from '../config/env.js';
 
-export function notFoundHandler(_req, res) {
+export function notFoundHandler(req, res) {
   return res.status(404).json({
     success: false,
-    error: { code: 'NOT_FOUND', message: 'The requested resource was not found.' },
+    error: { code: 'NOT_FOUND', message: 'The requested resource was not found.', requestId: req.id },
   });
 }
 
 export function errorHandler(error, req, res, _next) {
+  const requestId = req.id;
   const duplicateKey = error.code === 11000;
   const status = duplicateKey
     ? 409
@@ -17,7 +18,7 @@ export function errorHandler(error, req, res, _next) {
       : 500;
   const code = duplicateKey
     ? 'RESOURCE_CONFLICT'
-    : error.code && typeof error.code === 'string'
+    : status < 500 && error.code && typeof error.code === 'string'
       ? error.code
       : 'INTERNAL_SERVER_ERROR';
   const message = duplicateKey
@@ -36,7 +37,7 @@ export function errorHandler(error, req, res, _next) {
 
   return res.status(status).json({
     success: false,
-    error: { code, message: message || 'An unexpected error occurred.' },
+    error: { code, message: message || 'An unexpected error occurred.', requestId },
   });
 }
 

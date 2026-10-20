@@ -18,6 +18,13 @@ try {
   logger.error('Failed to load IFCT dataset from data/ifct_2017.json', error);
 }
 
+const nutrientAvailability = Object.freeze(Object.fromEntries(
+  [...new Set(foodRecords.flatMap((food) => Object.keys(food.nutrients ?? {})))].map((key) => [
+    key,
+    foodRecords.some((food) => Number.isFinite(food.nutrients?.[key])),
+  ]),
+));
+
 const regionCodes = new Map();
 const regionsByState = {
   Central: ['Chhattisgarh', 'Madhya Pradesh', 'Uttar Pradesh', 'Uttarakhand', 'Uttaranchal'],
@@ -101,6 +108,10 @@ export function getIfctFoodCatalog() {
   return foodRecords.map(({ ifctCode, foodName }) => ({ ifctCode, foodName }));
 }
 
+export function getIfctNutrientAvailability() {
+  return { ...nutrientAvailability };
+}
+
 /**
  * Retrieves and ranks top 20-30 IFCT 2017 foods for target nutrient deficiencies,
  * filtered by user dietary preference, excluding allergens, and prioritizing regional foods.
@@ -178,6 +189,7 @@ export default {
   getFoodByIfctCode,
   searchIfctFoods,
   getIfctFoodCatalog,
+  getIfctNutrientAvailability,
   getMedicalDisclaimer,
   buildMealPlanPrompt,
   supportedRegions,

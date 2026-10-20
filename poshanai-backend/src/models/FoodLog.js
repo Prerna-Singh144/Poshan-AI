@@ -10,6 +10,8 @@ const foodLogSchema = new mongoose.Schema(
     ifctCode: { type: String, required: true },
     foodName: { type: String, required: true },
     grams: { type: Number, required: true, min: 1, max: 2000 },
+    quantity: { type: Number, min: 1, max: 2000 },
+    measure: { type: String, maxlength: 30 },
     // Computed on the server from the IFCT dataset; never taken from the client.
     calories: { type: Number, required: true, min: 0 },
     protein: { type: Number, required: true, min: 0 },
@@ -25,7 +27,7 @@ foodLogSchema.index({ userId: 1, date: 1 });
 foodLogSchema.plugin(encrypt, {
   encryptionKey: env.encryptionKey,
   signingKey: env.signingKey,
-  encryptedFields: ['ifctCode', 'foodName', 'grams', 'calories', 'protein', 'carbs', 'fat'],
+  encryptedFields: ['ifctCode', 'foodName', 'grams', 'quantity', 'measure', 'calories', 'protein', 'carbs', 'fat'],
 });
 
 const FoodLog = mongoose.models.FoodLog ?? mongoose.model('FoodLog', foodLogSchema);

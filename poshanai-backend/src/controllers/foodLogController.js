@@ -3,7 +3,9 @@ import {
   assertCatalogLoaded,
   getFoodByCode,
   hasCalorieData,
-  scaleNutrients,
+  MAX_GRAMS,
+  MIN_GRAMS,
+  scaleFoodPortion,
   searchFoods,
   sumNutrients,
 } from '../services/foodCatalog.service.js';
@@ -20,6 +22,8 @@ function publicEntry(entry) {
     ifctCode: plain.ifctCode,
     foodName: plain.foodName,
     grams: plain.grams,
+    quantity: plain.quantity,
+    measure: plain.measure,
     calories: plain.calories,
     protein: plain.protein,
     carbs: plain.carbs,
@@ -36,7 +40,7 @@ export const searchFoodCatalog = asyncHandler(async (req, res) => {
 
 export const addFood = asyncHandler(async (req, res) => {
   const userId = req.user._id; // never from req.body
-  const { ifctCode, grams, date } = req.body;
+  const { ifctCode, grams, quantity, measure, date } = req.body;
 
   assertCatalogLoaded();
   const food = getFoodByCode(ifctCode);
@@ -44,6 +48,21 @@ export const addFood = asyncHandler(async (req, res) => {
 
   if (!hasCalorieData(food)) {
     throw httpError(422, 'FOOD_DATA_INCOMPLETE', 'Calorie data is missing for this food, so it cannot be logged yet.');
+  }
+
+  let finalGrams = grams;
+  if (quantity !== undefined) {
+    const gramsPerUnit = measure === 'grams' ? 1 : food.servingUnits?.[measure];
+    if (!Number.isFinite(gramsPerUnit) || gramsPerUnit <= 0) {
+      throw httpError(400, 'INVALID_FOOD_MEASURE', 'That serving measure is not available for this food.');
+    }
+    if (measure !== 'grams' && quantity > 20) {
+      throw httpError(400, 'INVALID_FOOD_QUANTITY', 'Serving quantity must be between 1 and 20.');
+    }
+    finalGrams = Math.round(quantity * gramsPerUnit * 10) / 10;
+    if (finalGrams < MIN_GRAMS || finalGrams > MAX_GRAMS) {
+      throw httpError(400, 'INVALID_FOOD_QUANTITY', `This portion must be between ${MIN_GRAMS} and ${MAX_GRAMS} g.`);
+    }
   }
 
   const existingCount = await FoodLog.countDocuments({ userId, date });
@@ -56,8 +75,10 @@ export const addFood = asyncHandler(async (req, res) => {
     date,
     ifctCode: food.ifctCode,
     foodName: food.foodName,
-    grams,
-    ...scaleNutrients(food.nutrients, grams),
+    grams: finalGrams,
+    quantity,
+    measure,
+    ...scaleFoodPortion(food, finalGrams),
   });
   const entries = await FoodLog.find({ userId, date }).sort({ createdAt: 1 });
   return res.status(201).json({

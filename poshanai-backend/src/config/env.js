@@ -15,6 +15,28 @@ if (!accessSecret || !refreshSecret) {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const mongoTlsOverride = process.env.MONGODB_TLS;
+const mongoHost = (() => {
+  try {
+    return new URL(process.env.MONGODB_URI.replace(/^mongodb(\+srv)?:\/\//, 'http://')).hostname;
+  } catch {
+    return '';
+  }
+})();
+const isLocalMongo = ['localhost', '127.0.0.1', '::1', 'mongo'].includes(mongoHost);
+const mongoTls = mongoTlsOverride === undefined
+  ? nodeEnv === 'production' && !isLocalMongo
+  : mongoTlsOverride.toLowerCase() === 'true';
+if (mongoTlsOverride !== undefined && !['true', 'false'].includes(mongoTlsOverride.toLowerCase())) {
+  throw new Error('MONGODB_TLS must be true or false.');
+}
+if (nodeEnv === 'production' && !isLocalMongo && !mongoTls) {
+  throw new Error('MONGODB_TLS=true is required for production MongoDB connections.');
+}
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? (nodeEnv === 'production' ? 1 : 0));
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 10) {
+  throw new Error('TRUST_PROXY_HOPS must be an integer between 0 and 10.');
+}
 const storageType = process.env.STORAGE_TYPE ?? (nodeEnv === 'production' ? 's3' : 'local');
 if (!['local', 's3'].includes(storageType)) {
   throw new Error('STORAGE_TYPE must be either local or s3.');
@@ -49,8 +71,10 @@ const signingKey = process.env.SIGNING_KEY ?? createHmac('sha512', accessSecret)
 export const env = {
   nodeEnv,
   port: Number(process.env.PORT ?? 5000),
+  trustProxyHops,
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
+  mongoTls,
   redisUrl: process.env.REDIS_URL ?? null,
   storageType,
   s3Bucket: process.env.S3_BUCKET ?? null,

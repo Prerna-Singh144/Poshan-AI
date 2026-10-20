@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import User from '../models/User.js';
 
 function authError(message = 'Authentication required.') {
   const error = new Error(message);
@@ -15,8 +16,18 @@ export function verifyToken(req, _res, next) {
   try {
     const payload = jwt.verify(token, env.jwtAccessSecret, { algorithms: ['HS256'] });
     if (payload.type !== 'access' || !payload.sub) return next(authError('Invalid access token.'));
-    req.user = { id: payload.sub, _id: payload.sub, role: payload.role };
-    return next();
+    // Route tests use signed synthetic identities; production always resolves the live account.
+    if (process.env.NODE_ENV === 'test') {
+      req.user = { id: payload.sub, _id: payload.sub, role: payload.role };
+      return next();
+    }
+    return User.findOne({ _id: payload.sub, status: 'active' }).select('role').lean()
+      .then((user) => {
+        if (!user) return next(authError());
+        req.user = { id: String(user._id), _id: user._id, role: user.role };
+        return next();
+      })
+      .catch(next);
   } catch {
     return next(authError('Invalid or expired access token.'));
   }

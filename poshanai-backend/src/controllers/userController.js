@@ -13,12 +13,12 @@ function clearRefreshCookie(res) {
   res.clearCookie(env.refreshCookieName, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/api/auth',
   });
   res.clearCookie(env.refreshCookiePresenceName, {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   });
 }
@@ -128,7 +128,6 @@ export const exportUserData = asyncHandler(async (req, res) => {
       fileType: r.fileType,
       ocrStatus: r.ocrStatus,
       reviewStatus: r.reviewStatus,
-      rawOcrText: r.rawOcrText,
       extractedValues: r.extractedValues,
       uploadedAt: r.uploadedAt,
       processedAt: r.processedAt,

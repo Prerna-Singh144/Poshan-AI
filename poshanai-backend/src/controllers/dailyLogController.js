@@ -7,6 +7,7 @@ import { calculateMaintenanceCalories } from '../services/calorieService.js';
 import { searchIfctFoods } from '../rag/ragService.js';
 import { parseFoodsFromText } from '../services/aiFoodParserService.js';
 import { getSupplementById } from '../services/supplementCatalogService.js';
+import { MICRONUTRIENTS } from '../config/constants.js';
 import {
   buildFoodEntry,
   compareMicronutrientsToRda,
@@ -41,12 +42,16 @@ export const addSupplement = asyncHandler(async (req, res) => {
     throw httpError(422, 'SUPPLEMENT_UNIT_MISMATCH', `Unit must be ${catalogItem.unit} for this supplement.`);
   }
   const vitamins = catalogItem
-    ? {
-      vitaminD: catalogItem.vitaminKey === 'vitaminD' ? req.body.dosage : 0,
-      b12: catalogItem.vitaminKey === 'b12' ? req.body.dosage : 0,
-      iron: catalogItem.vitaminKey === 'iron' ? req.body.dosage : 0,
-      calcium: catalogItem.vitaminKey === 'calcium' ? req.body.dosage : 0,
-    }
+    ? Object.fromEntries([
+      ...MICRONUTRIENTS.map(({ key }) => [
+        key,
+        catalogItem.vitaminKey === key
+          || (key === 'vitaminB12' && catalogItem.vitaminKey === 'b12')
+          ? req.body.dosage
+          : 0,
+      ]),
+      ['b12', catalogItem.vitaminKey === 'vitaminB12' || catalogItem.vitaminKey === 'b12' ? req.body.dosage : 0],
+    ])
     : req.body.vitamins;
   const supplement = await SupplementLog.create({
     userId: req.user.id,
@@ -123,8 +128,8 @@ export const getToday = asyncHandler(async (req, res) => {
       totals,
       micronutrients: {
         totals: micronutrientTotals,
-        rdaComparison: compareMicronutrientsToRda(micronutrientTotals),
-        disclaimer: 'Logged intake compared with project reference values; this is not a medical diagnosis.',
+        rdaComparison: compareMicronutrientsToRda(micronutrientTotals, user.profile),
+        disclaimer: 'Logged intake compared with ICMR-NIN reference values; unknown nutrient amounts reflect missing IFCT data. This is not a medical diagnosis.',
       },
       calorieComparison: {
         consumed: totals.calories,

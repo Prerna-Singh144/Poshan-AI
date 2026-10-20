@@ -13,6 +13,7 @@ import MealPlanView from './pages/MealPlanView.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 // Merged Imports (from both branches)
+import Experts from './pages/Experts.jsx';
 import CalorieTracker from './pages/CalorieTracker.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Recommendations from './pages/Recommendations.jsx';
@@ -32,6 +33,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/experts" element={<Experts />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/upload" element={<UploadReport />} />
             <Route path="/meal-plan/:id" element={<MealPlanView />} />

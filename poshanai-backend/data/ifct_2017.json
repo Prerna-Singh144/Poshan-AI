@@ -276,6 +276,11 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "bowl": 150,
+      "cup": 200,
+      "defaultUnit": "cup"
+    },
     "nutrients": {
       "calories": 353.73,
       "protein": 9.16,
@@ -320,6 +325,11 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "bowl": 150,
+      "cup": 200,
+      "defaultUnit": "cup"
+    },
     "nutrients": {
       "calories": 356.36,
       "protein": 7.94,
@@ -3620,6 +3630,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 150,
+      "medium": 180,
+      "large": 220,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 62.38,
       "protein": 0.29,
@@ -3642,6 +3658,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 150,
+      "medium": 180,
+      "large": 220,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 51.15,
       "protein": 0.46,
@@ -3664,6 +3686,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 150,
+      "medium": 180,
+      "large": 220,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 63.81,
       "protein": 0.31,
@@ -3686,6 +3714,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 150,
+      "medium": 180,
+      "large": 220,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 64.29,
       "protein": 0.27,
@@ -3796,6 +3830,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 101,
+      "medium": 118,
+      "large": 136,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 110.66,
       "protein": 1.25,
@@ -3818,6 +3858,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 101,
+      "medium": 118,
+      "large": 136,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 106.36,
       "protein": 1.49,
@@ -3840,6 +3886,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 101,
+      "medium": 118,
+      "large": 136,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 111.62,
       "protein": 1.29,
@@ -3862,6 +3914,12 @@
       "fishetarian"
     ],
     "allergens": [],
+    "servingUnits": {
+      "small": 101,
+      "medium": 118,
+      "large": 136,
+      "defaultUnit": "medium"
+    },
     "nutrients": {
       "calories": 105.16,
       "protein": 1.23,
@@ -7046,6 +7104,12 @@
     "allergens": [
       "eggs"
     ],
+    "servingUnits": {
+      "small": 40,
+      "medium": 45,
+      "large": 50,
+      "defaultUnit": "large"
+    },
     "nutrients": {
       "calories": 134.8,
       "protein": 13.28,
@@ -7118,6 +7182,12 @@
     "allergens": [
       "eggs"
     ],
+    "servingUnits": {
+      "small": 40,
+      "medium": 45,
+      "large": 50,
+      "defaultUnit": "large"
+    },
     "nutrients": {
       "calories": 147.71,
       "protein": 13.43,

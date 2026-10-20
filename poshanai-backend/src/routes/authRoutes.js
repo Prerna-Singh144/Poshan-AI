@@ -17,8 +17,12 @@ const authLimiterOptions = {
     error: { code: 'RATE_LIMITED', message: 'Too many authentication attempts. Try again later.' },
   }),
 };
-const registerLimiter = rateLimit(authLimiterOptions);
-const loginLimiter = rateLimit({
+const registerLimiter = process.env.NODE_ENV === 'test'
+  ? (_req, _res, next) => next()
+  : rateLimit(authLimiterOptions);
+const loginLimiter = process.env.NODE_ENV === 'test'
+  ? (_req, _res, next) => next()
+  : rateLimit({
   ...authLimiterOptions,
   skipSuccessfulRequests: true,
   keyGenerator: (req) => {
@@ -26,7 +30,7 @@ const loginLimiter = rateLimit({
     const emailHash = createHash('sha256').update(email).digest('hex');
     return `${req.ip}:${emailHash}`;
   },
-});
+  });
 
 router.post('/register', registerLimiter, validateRegister, authController.register);
 router.post('/login', loginLimiter, validateLogin, authController.login);

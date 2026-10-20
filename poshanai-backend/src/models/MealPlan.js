@@ -41,6 +41,7 @@ const mealSchema = new mongoose.Schema(
       required: true,
       enum: ['breakfast', 'lunch', 'dinner', 'snack'],
     },
+    nutrientTargets: { type: [String], required: true, default: [] },
     items: { type: [itemSchema], required: true },
   },
   { _id: false },
@@ -66,6 +67,7 @@ const mealPlanSchema = new mongoose.Schema(
     title: { type: String, trim: true, default: 'Personalized Meal Plan' },
     preferences: { type: Object, default: {} },
     targetDeficiencies: { type: [String], default: [] },
+    supplementGuidance: { type: String, trim: true, default: null },
     planDurationDays: { type: Number, required: true, min: 1, max: 30, default: 7 },
     meals: {
       type: [mealSchema],

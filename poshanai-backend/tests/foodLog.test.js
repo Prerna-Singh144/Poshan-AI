@@ -25,6 +25,16 @@ test('food search never returns foods without calorie data', () => {
   assert.equal(hasCalorieData(getFoodByCode('A001')), true);
 });
 
+test('IFCT search includes configured serving units', () => {
+  assert.deepEqual(getFoodByCode('M001').servingUnits, {
+    small: 40, medium: 45, large: 50, defaultUnit: 'large',
+  });
+  assert.deepEqual(getFoodByCode('A015').servingUnits, {
+    bowl: 150, cup: 200, defaultUnit: 'cup',
+  });
+  assert.equal(searchFoods('banana', 1)[0].servingUnits.defaultUnit, 'medium');
+});
+
 test('scaleNutrients scales per-100 g values to the portion and rounds to 1 decimal', () => {
   assert.deepEqual(
     scaleNutrients({ calories: 356.12, protein: 14.59, carbs: 59.98, fat: 5.74 }, 150),
@@ -74,9 +84,19 @@ const day = (token, date = today) => request(app).get('/api/logs/today').query({
 const search = (token, q) => request(app).get('/api/foods/search').query({ q }).set('Authorization', `Bearer ${token}`);
 
 test('all food and log routes require authentication', async () => {
+  assert.equal((await request(app).get('/api/foods?q=egg')).status, 401);
   assert.equal((await request(app).get('/api/foods/search?q=rice')).status, 401);
   assert.equal((await request(app).post('/api/logs/add-food').send({})).status, 401);
   assert.equal((await request(app).get(`/api/logs/today?date=${today}`)).status, 401);
+});
+
+test('GET /api/foods?q=egg returns serving units and keeps the search alias', async () => {
+  const res = await request(app).get('/api/foods').query({ q: 'egg' }).set('Authorization', `Bearer ${tokenA}`);
+  assert.equal(res.status, 200);
+  const egg = res.body.data.foods.find((food) => food.ifctCode === 'M001');
+  assert.deepEqual(egg.servingUnits, { small: 40, medium: 45, large: 50, defaultUnit: 'large' });
+  assert.equal((await search(tokenA, 'rice')).status, 200);
+  assert.equal((await request(app).get('/api/foods').set('Authorization', `Bearer ${tokenA}`)).status, 400);
 });
 
 test('GET /api/foods/search returns IFCT foods and validates the query', async () => {
@@ -102,8 +122,24 @@ test('POST /api/logs/add-food computes nutrition server-side and returns running
   assert.equal(list.body.data.totals.calories, 712.3);
 });
 
+test('add-food converts serving quantity to grams and calculates IFCT macros for the final portion', async () => {
+  const res = await add(tokenA, { ifctCode: 'M001', quantity: 2, measure: 'large', date: today });
+  assert.equal(res.status, 201);
+  assert.equal(res.body.data.entry.grams, 100);
+  assert.equal(rows[0].grams, 100);
+  assert.equal(res.body.data.entry.quantity, 2);
+  assert.equal(res.body.data.entry.measure, 'large');
+  assert.equal(res.body.data.entry.calories, 134.8);
+  assert.equal(res.body.data.entry.protein, 13.3);
+  assert.equal(res.body.data.entry.carbs, 0);
+  assert.equal(res.body.data.entry.fat, 9.2);
+  assert.equal((await add(tokenA, { ifctCode: 'M001', quantity: 2, measure: 'giant', date: today })).status, 400);
+  assert.equal((await add(tokenA, { ifctCode: 'A001', quantity: 2, measure: 'large', date: today })).status, 400);
+});
+
 test('add-food rejects client-supplied nutrition/userId, bad grams, bad dates and unknown foods', async () => {
   const ok = { ifctCode: 'A001', grams: 100, date: today };
+  assert.equal((await add(tokenA, { ifctCode: 'A001', date: today })).status, 400);
   assert.equal((await add(tokenA, { ...ok, calories: 1 })).status, 400);
   assert.equal((await add(tokenA, { ...ok, userId: 'bbbbbbbbbbbbbbbbbbbbbbbb' })).status, 400);
   for (const grams of [0, -5, 2001, 'abc']) assert.equal((await add(tokenA, { ...ok, grams })).status, 400, `grams ${grams}`);

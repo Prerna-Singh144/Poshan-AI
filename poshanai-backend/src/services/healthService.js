@@ -44,9 +44,11 @@ async function checkRedis() {
 
 export async function getHealthStatus() {
   const [mongo, redis] = await Promise.all([checkMongo(), checkRedis()]);
+  const status = !mongo ? 'unhealthy' : redis ? 'ok' : 'degraded';
   return {
-    status: mongo && redis ? 'ok' : 'degraded',
+    status,
     checks: { mongo, redis, uptime: process.uptime() },
+    ...(!redis && mongo ? { warning: 'Redis is offline. OCR will use synchronous fallback.' } : {}),
   };
 }
 

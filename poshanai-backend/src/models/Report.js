@@ -1,6 +1,14 @@
 import mongoose from 'mongoose';
 import encrypt from 'mongoose-encryption';
 import { env } from '../config/env.js';
+import { MICRONUTRIENTS } from '../config/constants.js';
+
+const micronutrientFields = Object.fromEntries(MICRONUTRIENTS.map(({ key }) => [key, {
+  type: Number,
+  min: 0,
+  default: null,
+}]));
+const micronutrientSchema = new mongoose.Schema(micronutrientFields, { _id: false });
 
 const extractedValueSchema = new mongoose.Schema(
   {
@@ -40,6 +48,7 @@ const reportSchema = new mongoose.Schema(
     processingStartedAt: { type: Date, default: null },
     rawOcrText: { type: String, default: '' },
     extractedValues: { type: [extractedValueSchema], default: [] },
+    nutrientIntake: { type: micronutrientSchema, default: () => ({}) },
     uploadedAt: { type: Date, default: Date.now, required: true },
     processedAt: { type: Date, default: null },
     retentionWarningSentAt: { type: Date, default: null },

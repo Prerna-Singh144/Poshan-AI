@@ -9,7 +9,7 @@ const disclaimer = 'These suggestions are for awareness only. Discuss any test w
 const PROFILE_FIELDS = [
   'age', 'gender', 'weightKg', 'heightCm', 'dietType', 'region',
   'sunExposure', 'symptoms', 'typicalDiet', 'mealsPerDay', 
-  'sleepHours', 'sleepTime', 'activityLevel', 'habits', 'consentGiven'
+  'sleepHours', 'sleepTime', 'activityLevel', 'habits', 'consent'
 ];
 
 function serializeProfile(profile) {

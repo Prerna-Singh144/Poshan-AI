@@ -1,5 +1,6 @@
-import { getFoodByIfctCode } from '../rag/ragService.js';
+import { getFoodByIfctCode, getIfctNutrientAvailability } from '../rag/ragService.js';
 import httpError from '../utils/httpError.js';
+import { MICRONUTRIENTS, MICRONUTRIENT_RDA } from '../config/constants.js';
 
 const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
@@ -21,14 +22,12 @@ export function buildFoodEntry({ mealType, ifctCode, quantityGrams }) {
     protein: round(food.nutrients.protein * scale),
     carbs: round(food.nutrients.carbs * scale),
     fat: round(food.nutrients.fat * scale),
-    micronutrients: {
-      vitaminD: round((food.nutrients.vitaminD ?? 0) * 40 * scale),
-      vitaminB12: food.nutrients.vitaminB12 === null || food.nutrients.vitaminB12 === undefined
-        ? null
-        : round(food.nutrients.vitaminB12 * scale),
-      iron: round((food.nutrients.iron ?? 0) * scale),
-      calcium: round((food.nutrients.calcium ?? 0) * scale),
-    },
+    micronutrients: Object.fromEntries(MICRONUTRIENTS.map(({ key }) => {
+      const value = food.nutrients[key];
+      if (value === null || value === undefined) return [key, null];
+      const unitFactor = key === 'vitaminD' ? 40 : 1;
+      return [key, round(value * unitFactor * scale)];
+    })),
   };
 }
 
@@ -42,8 +41,9 @@ export function sumFoodEntries(meals = []) {
 }
 
 export function sumMicronutrients(meals = [], supplements = []) {
-  const totals = { vitaminD: 0, vitaminB12: 0, iron: 0, calcium: 0 };
-  let vitaminB12Known = true;
+  const totals = Object.fromEntries(MICRONUTRIENTS.map(({ key }) => [key, 0]));
+  const catalogAvailability = getIfctNutrientAvailability();
+  const known = Object.fromEntries(MICRONUTRIENTS.map(({ key }) => [key, catalogAvailability[key] === true]));
   for (const meal of meals) {
     // Re-read legacy entries that predate micronutrient persistence.
     const entry = meal.micronutrients ?? buildFoodEntry({
@@ -51,41 +51,54 @@ export function sumMicronutrients(meals = [], supplements = []) {
       ifctCode: meal.ifctCode,
       quantityGrams: meal.quantityGrams,
     }).micronutrients;
-    for (const nutrient of ['vitaminD', 'iron', 'calcium']) totals[nutrient] += entry[nutrient] ?? 0;
-    if (entry.vitaminB12 === null || entry.vitaminB12 === undefined) vitaminB12Known = false;
-    else totals.vitaminB12 += entry.vitaminB12;
+    for (const { key } of MICRONUTRIENTS) {
+      if (entry[key] === null || entry[key] === undefined) known[key] = false;
+      else totals[key] += entry[key];
+    }
   }
   for (const supplement of supplements) {
-    totals.vitaminD += supplement.vitamins?.vitaminD ?? 0;
-    totals.vitaminB12 += supplement.vitamins?.b12 ?? 0;
-    totals.iron += supplement.vitamins?.iron ?? 0;
-    totals.calcium += supplement.vitamins?.calcium ?? 0;
+    for (const { key } of MICRONUTRIENTS) {
+      const value = key === 'vitaminB12'
+        ? supplement.vitamins?.vitaminB12 ?? supplement.vitamins?.b12 ?? 0
+        : supplement.vitamins?.[key] ?? 0;
+      totals[key] += value;
+    }
   }
-  return {
-    vitaminD: round(totals.vitaminD),
-    vitaminB12: vitaminB12Known ? round(totals.vitaminB12) : null,
-    iron: round(totals.iron),
-    calcium: round(totals.calcium),
-  };
+  return Object.fromEntries(MICRONUTRIENTS.map(({ key }) => [key, known[key] ? round(totals[key]) : null]));
 }
 
-export function compareMicronutrientsToRda(totals) {
-  const references = [
-    { nutrient: 'Vitamin D', key: 'vitaminD', rda: 600, unit: 'IU' },
-    { nutrient: 'Vitamin B12', key: 'vitaminB12', rda: 2.2, unit: 'µg' },
-    { nutrient: 'Iron', key: 'iron', rda: 17, unit: 'mg' },
-    { nutrient: 'Calcium', key: 'calcium', rda: 1000, unit: 'mg' },
-  ];
-  return references.map(({ nutrient, key, rda, unit }) => {
+export function getMicronutrientRda(profile = {}) {
+  const { age, gender } = profile;
+  if (!Number.isFinite(age) || age < 13 || !MICRONUTRIENT_RDA[gender]) return null;
+  const ageGroup = age <= 15 ? 'adolescent13to15' : age <= 18 ? 'adolescent16to18' : 'adult';
+  return MICRONUTRIENT_RDA[gender][ageGroup];
+}
+
+export function compareMicronutrientsToRda(totals, profile = {}) {
+  const rdaValues = getMicronutrientRda(profile);
+  return MICRONUTRIENTS.map(({ nutrient, key, unit }) => {
     const consumed = totals[key];
+    const rda = rdaValues?.[key] ?? null;
     return {
       nutrient,
+      key,
       consumed,
       unit,
       rda,
-      status: consumed === null ? 'unknown' : consumed < rda ? 'deficient' : 'meets_rda',
+      dataUnavailable: consumed === null || consumed === undefined,
+      progressPercent: consumed === null || rda === null ? null : round((consumed / rda) * 100),
+      status: consumed === null || consumed === undefined || rda === null
+        ? 'unknown'
+        : consumed < rda ? 'below_rda' : 'meets_rda',
     };
   });
 }
 
-export default { getTodayDateKey, buildFoodEntry, sumFoodEntries, sumMicronutrients, compareMicronutrientsToRda };
+export default {
+  getTodayDateKey,
+  buildFoodEntry,
+  sumFoodEntries,
+  sumMicronutrients,
+  getMicronutrientRda,
+  compareMicronutrientsToRda,
+};

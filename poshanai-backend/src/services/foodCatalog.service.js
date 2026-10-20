@@ -32,11 +32,12 @@ const round1 = (value) => Math.round(value * 10) / 10;
 const toNumber = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
 
 /** Macro values per 100 g, as stored in the IFCT dataset. */
-function publicFood({ ifctCode, foodName, category, nutrients }) {
+function publicFood({ ifctCode, foodName, category, nutrients, servingUnits }) {
   return {
     ifctCode,
     foodName,
     category,
+    ...(servingUnits ? { servingUnits } : {}),
     nutrients: {
       calories: toNumber(nutrients?.calories),
       protein: toNumber(nutrients?.protein),
@@ -99,6 +100,11 @@ export function scaleNutrients(per100g, grams) {
   };
 }
 
+/** Scales all macros from IFCT per-100 g values to the final portion size. */
+export function scaleFoodPortion(food, grams) {
+  return scaleNutrients(food.nutrients, grams);
+}
+
 export function sumNutrients(entries) {
   const totals = entries.reduce(
     (sum, entry) => ({
@@ -117,4 +123,4 @@ export function sumNutrients(entries) {
   };
 }
 
-export default { searchFoods, getFoodByCode, scaleNutrients, sumNutrients, assertCatalogLoaded };
+export default { searchFoods, getFoodByCode, scaleFoodPortion, scaleNutrients, sumNutrients, assertCatalogLoaded };

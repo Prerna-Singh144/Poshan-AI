@@ -13,6 +13,7 @@ import { retrieveFoodsForDeficiencies } from '../src/rag/ragService.js';
 
 let mongod;
 let ipCounter = 200;
+let lastAiPrompt = '';
 
 function nextIp() {
   return `10.0.3.${ipCounter++}`;
@@ -35,6 +36,7 @@ function mockAiCompletion() {
     meals: Array.from({ length: 7 }, (_, index) => ({
       day: index + 1,
       mealType: 'breakfast',
+      nutrientTargets: ['Iron'],
       items: [{
         ifctCode: chosenCode,
         foodName: foods.find((food) => food.ifctCode === chosenCode)?.foodName,
@@ -49,6 +51,7 @@ function createSampleMeals() {
   return Array.from({ length: 7 }, (_, i) => ({
     day: i + 1,
     mealType: 'breakfast',
+    nutrientTargets: ['Iron'],
     items: [
       {
         foodName: 'Turmeric powder',
@@ -87,18 +90,22 @@ before(async () => {
   await mongoose.connect(mongod.getUri());
 
   // Mock global fetch for OmniRoute AI completions
-  mock.method(globalThis, 'fetch', async () => ({
-    ok: true,
-    json: async () => ({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify(mockAiCompletion()),
+  mock.method(globalThis, 'fetch', async (_url, options) => {
+    const requestBody = JSON.parse(options.body);
+    lastAiPrompt = requestBody.messages.find(({ role }) => role === 'user')?.content ?? '';
+    return {
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify(mockAiCompletion()),
+            },
           },
-        },
-      ],
-    }),
-  }));
+        ],
+      }),
+    };
+  });
 });
 
 after(async () => {
@@ -157,6 +164,38 @@ describe('Meal Plan API (/api/mealplans)', () => {
       const inDb = await MealPlan.findById(res.body.data._id);
       assert.ok(inDb);
       assert.equal(inDb.userId.toString(), user.id);
+      assert.deepEqual(inDb.meals[0].nutrientTargets, ['Iron']);
+    });
+
+    it('generates Iron-targeted meals and severe B12 clinician guidance from a low Iron and B12 report', async () => {
+      const { token, user, ip } = await createAuthenticatedUser('Deficiency User', 'deficiency@example.com');
+      const report = await Report.create({
+        userId: user.id,
+        fileUrl: `uploads/reports/${randomUUID()}.pdf`,
+        fileSizeBytes: 2048,
+        fileType: 'application/pdf',
+        ocrStatus: 'completed',
+        reviewStatus: 'confirmed',
+        extractedValues: [
+          { nutrient: 'Iron', value: 8, unit: 'µg/dL', flag: 'low', normalizedValue: 8, normalizedUnit: 'µg/dL' },
+          { nutrient: 'Vitamin B12', value: 120, unit: 'pg/mL', flag: 'low', normalizedValue: 120, normalizedUnit: 'pg/mL' },
+        ],
+      });
+
+      const res = await request(app)
+        .post('/api/mealplans/generate')
+        .set('Authorization', `Bearer ${token}`)
+        .set('X-Forwarded-For', ip)
+        .send({ reportId: report._id.toString(), preferences: { dietType: 'veg' } });
+
+      assert.equal(res.status, 201);
+      assert.deepEqual(res.body.data.targetDeficiencies, ['Iron', 'Vitamin B12']);
+      assert.ok(res.body.data.meals.every((meal) => meal.nutrientTargets.includes('Iron')));
+      assert.match(res.body.data.supplementGuidance, /clinician-supervised vitamin B12 supplement/i);
+      assert.match(res.body.data.disclaimer, /does not diagnose, treat, or replace advice/i);
+      assert.match(lastAiPrompt, /The user is deficient in Iron \(LOW, 8 µg\/dL\); Vitamin B12 \(LOW, 120 pg\/mL\)/);
+      assert.match(lastAiPrompt, /SEVERE VITAMIN B12 DEFICIENCY/);
+      assert.match(lastAiPrompt, /nutrientTargets/);
     });
 
     it('rejects request when reportId is missing', async () => {

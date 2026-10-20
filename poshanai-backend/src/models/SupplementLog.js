@@ -1,4 +1,11 @@
 import mongoose from 'mongoose';
+import { MICRONUTRIENTS } from '../config/constants.js';
+
+const micronutrientFields = Object.fromEntries(MICRONUTRIENTS.map(({ key }) => [key, {
+  type: Number,
+  min: 0,
+  default: 0,
+}]));
 
 const supplementLogSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -8,10 +15,8 @@ const supplementLogSchema = new mongoose.Schema({
   dosage: { type: Number, min: 0 },
   unit: { type: String, trim: true, maxlength: 20 },
   vitamins: {
-    vitaminD: { type: Number, min: 0, default: 0 },
+    ...micronutrientFields,
     b12: { type: Number, min: 0, default: 0 },
-    iron: { type: Number, min: 0, default: 0 },
-    calcium: { type: Number, min: 0, default: 0 },
   },
 }, { timestamps: true, versionKey: false });
 
