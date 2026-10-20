@@ -4,8 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Skeleton } from '../components/common/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { useCachedFetch } from '../hooks/useCachedFetch.js';
-import { getReport, reviewReport } from '../api/reportApi.js'; // Added for Report Review
+import { getReport, getReportsPage, reviewReport } from '../api/reportApi.js'; // Added for Report Review
 import CalorieTracker from '../components/dashboard/CalorieTracker.jsx';
+import { generateMealPlan } from '../api/mealPlanApi.js';
 
 const REPORTS_URL = '/reports?page=1&limit=50';
 const MEAL_PLANS_URL = '/mealplans?page=1&limit=100';
@@ -156,8 +157,23 @@ function ProfileSummary({ user }) {
   );
 }
 
-function ReportList({ reports, isLoading, error, onRetry }) {
+function ReportList({ reports, isLoading, error, onRetry, hasMore, loadMore }) {
   const navigate = useNavigate();
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState('');
+  const handleLoadMore = async () => {
+    if (visibleCount < reports.length) {
+      setVisibleCount((count) => count + 5);
+      return;
+    }
+    if (!hasMore || !loadMore) return;
+    setLoadingMore(true);
+    setLoadMoreError('');
+    try { await loadMore(); setVisibleCount((count) => count + 5); }
+    catch { setLoadMoreError('More reports could not be loaded. Please try again.'); }
+    finally { setLoadingMore(false); }
+  };
 
   return (
     <Card as="section" aria-labelledby="recent-reports-title">
@@ -210,7 +226,7 @@ function ReportList({ reports, isLoading, error, onRetry }) {
         </div>
       ) : (
         <ul className="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
-          {reports.slice(0, 5).map((report, index) => {
+          {reports.slice(0, visibleCount).map((report, index) => {
             const id = getId(report);
             const status = report.ocrStatus || 'status unavailable';
             return (
@@ -233,6 +249,8 @@ function ReportList({ reports, isLoading, error, onRetry }) {
           })}
         </ul>
       )}
+      {!isLoading && !error && reports?.length > 0 && (visibleCount < reports.length || hasMore) && <button type="button" className="mt-5 rounded-lg border border-emerald-200 px-4 py-2 text-sm font-semibold text-leaf hover:bg-emerald-50 disabled:opacity-50" onClick={handleLoadMore} disabled={loadingMore}>{loadingMore ? 'Loading…' : 'Load more reports'}</button>}
+      {loadMoreError && <p role="alert" className="mt-2 text-sm text-red-700">{loadMoreError}</p>}
     </Card>
   );
 }
@@ -240,6 +258,9 @@ function ReportList({ reports, isLoading, error, onRetry }) {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [additionalReports, setAdditionalReports] = useState([]);
+  const [reportsPage, setReportsPage] = useState(1);
+  const [reportsHasMore, setReportsHasMore] = useState(false);
   const {
     data: reportData,
     isLoading: reportsLoading,
@@ -253,7 +274,8 @@ export default function Dashboard() {
     refetch: refetchMealPlans,
   } = useCachedFetch(MEAL_PLANS_URL);
 
-  const reports = getReports(reportData);
+  const firstPageReports = getReports(reportData);
+  const reports = firstPageReports === null ? null : [...firstPageReports, ...additionalReports];
   const mealPlans = getMealPlans(mealPlanData);
   const mealPlansFormatError = !mealPlansLoading && !mealPlansError && mealPlans === null;
   const activeMealPlans = mealPlans?.filter((plan) => plan.status === 'active') ?? [];
@@ -264,6 +286,7 @@ export default function Dashboard() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewError, setReviewError] = useState('');
   const [savingReview, setSavingReview] = useState(false);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
 
   const handleOpenReport = async (report) => {
     try {
@@ -272,6 +295,14 @@ export default function Dashboard() {
     } catch {
       setReviewError('Could not load report values.');
     }
+  };
+
+  const loadMoreReports = async () => {
+    const nextPage = reportsPage + 1;
+    const result = await getReportsPage(nextPage, 50);
+    setAdditionalReports((current) => [...current, ...result.reports]);
+    setReportsPage(nextPage);
+    setReportsHasMore(Boolean(result.pagination ? nextPage < result.pagination.totalPages : result.reports.length === 50));
   };
 
   const handleSubmitReview = async (reviewStatus) => {
@@ -285,6 +316,23 @@ export default function Dashboard() {
       setReviewError('Could not save report review.');
     } finally {
       setSavingReview(false);
+    }
+  };
+
+  const handleGeneratePlan = async () => {
+    const reportId = selectedReport?.id ?? selectedReport?._id;
+    if (!reportId) return;
+    setGeneratingPlan(true);
+    setReviewError('');
+    try {
+      const response = await generateMealPlan({ reportId });
+      const job = response?.data ?? response;
+      if (!job?.jobId) throw new Error('The generation service did not return a job ID.');
+      navigate(`/meal-plan/${encodeURIComponent(job.jobId)}`);
+    } catch (error) {
+      setReviewError(error.message || 'Could not start meal-plan generation.');
+    } finally {
+      setGeneratingPlan(false);
     }
   };
 
@@ -345,7 +393,7 @@ export default function Dashboard() {
 
       <section aria-label="Profile and reports" className="grid gap-5 lg:grid-cols-7">
         <div className="lg:col-span-3"><ProfileSummary user={user} /></div>
-        <div className="lg:col-span-4"><ReportList reports={reports} isLoading={reportsLoading} error={reportsError} onRetry={() => retryRequest(refetchReports)} /></div>
+        <div className="lg:col-span-4"><ReportList reports={reports} isLoading={reportsLoading} error={reportsError} onRetry={() => retryRequest(refetchReports)} hasMore={reportsHasMore || (firstPageReports?.length === 50 && reportsPage === 1)} loadMore={loadMoreReports} /></div>
       </section>
 
       {/* --- Report Review Section (Integrated from Member 2) --- */}
@@ -389,6 +437,7 @@ export default function Dashboard() {
               <button disabled={savingReview} className="rounded border px-4 py-2 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300" onClick={() => handleSubmitReview('corrected')}>
                 Save corrections
               </button>
+              {(selectedReport.reviewStatus === 'confirmed' || selectedReport.reviewStatus === 'corrected') && <button type="button" disabled={generatingPlan} className="rounded bg-orange-600 px-4 py-2 text-white disabled:opacity-50" onClick={handleGeneratePlan}>{generatingPlan ? 'Starting…' : 'Generate meal plan'}</button>}
             </div>
           </div>
         )}

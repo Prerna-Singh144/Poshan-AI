@@ -10,6 +10,8 @@ import Register from './pages/Register.jsx';
 import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import MealPlanView from './pages/MealPlanView.jsx';
+import DietPlanWizard from './pages/DietPlanWizard.jsx';
+import DietPlanResult from './pages/DietPlanResult.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 // Merged Imports (from both branches)
@@ -37,6 +39,8 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/upload" element={<UploadReport />} />
             <Route path="/meal-plan/:id" element={<MealPlanView />} />
+            <Route path="/diet-plan" element={<DietPlanWizard />} />
+            <Route path="/diet-plan/view" element={<DietPlanResult />} />
             
             {/* Merged New Routes */}
             <Route path="/onboarding" element={<Onboarding />} />

@@ -1,15 +1,13 @@
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import uploadReportFile, { cleanupUploadedFile } from '../middleware/uploadMiddleware.js';
 import * as reportController from '../controllers/reportController.js';
 import validationError from '../utils/validationError.js';
+import { sensitiveRateLimiter } from '../middleware/sensitiveRateLimiter.js';
 
 const router = Router();
-const uploadLimiter = process.env.NODE_ENV === 'test'
-  ? (_req, _res, next) => next()
-  : rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+const uploadLimiter = sensitiveRateLimiter({ name: 'report-uploads', windowMs: 60 * 60 * 1000, limit: 10 });
 const reportIdSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
@@ -33,7 +31,7 @@ const reviewSchema = Joi.object({
 const paginationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(10),
-}).unknown(true);
+}).unknown(false);
 
 function validateReportId(req, _res, next) {
   const { error, value } = reportIdSchema.validate(req.params, { abortEarly: false, stripUnknown: true });
@@ -43,7 +41,7 @@ function validateReportId(req, _res, next) {
 }
 
 function validateReportPagination(req, _res, next) {
-  const { error, value } = paginationSchema.validate(req.query, { abortEarly: false });
+  const { error, value } = paginationSchema.validate(req.query, { abortEarly: false, stripUnknown: true });
   if (error) return next(validationError());
   req.pagination = { page: value.page, limit: value.limit };
   return next();

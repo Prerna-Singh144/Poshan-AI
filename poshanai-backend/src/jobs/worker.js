@@ -15,9 +15,12 @@ import logger from '../utils/logger.js';
 import { OCR_SETTINGS, RETEST_REMINDER_SETTINGS } from '../config/constants.js';
 import { closeRetestReminderQueue, scheduleRetestReminderSweep } from './retestReminderQueue.js';
 import { runRetestReminderSweep } from '../services/retestReminderService.js';
+import { generateMealPlan } from '../services/aiService.js';
+import { mealPlanQueueName } from './mealPlanQueue.js';
 
 let worker;
 let retestReminderWorker;
+let mealPlanWorker;
 let sweepTimer;
 let sweepInProgress = false;
 
@@ -105,6 +108,19 @@ async function startWorker() {
   retestReminderWorker.on('failed', () => logger.error('The retest reminder sweep failed.'));
   retestReminderWorker.on('error', () => logger.error('The retest reminder worker encountered a Redis or processing error.'));
 
+  mealPlanWorker = new Worker(
+    mealPlanQueueName,
+    async (job) => {
+      if (job.name !== 'generate-meal-plan') throw new Error('Unknown meal-plan job.');
+      const plan = await generateMealPlan(job.data.userId, job.data.reportId, job.data.preferences);
+      return { planId: String(plan._id) };
+    },
+    { connection: redisConnection(null), concurrency: 2 },
+  );
+  mealPlanWorker.on('completed', () => logger.info('A meal-plan generation job completed.'));
+  mealPlanWorker.on('failed', () => logger.error('A meal-plan generation job failed.'));
+  mealPlanWorker.on('error', () => logger.error('The meal-plan worker encountered a Redis or processing error.'));
+
   await sweepStaleReports();
   sweepTimer = setInterval(() => {
     void sweepStaleReports().catch(() => {
@@ -119,6 +135,7 @@ async function stopWorker() {
   if (sweepTimer) clearInterval(sweepTimer);
   await worker?.close();
   await retestReminderWorker?.close();
+  await mealPlanWorker?.close();
   await Promise.all([closeOcrQueue(), closeRetestReminderQueue()]);
   await mongoose.disconnect();
 }

@@ -1,7 +1,7 @@
 import { create } from 'axios';
 
 const client = create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   withCredentials: true,
   timeout: 15_000,
   headers: { 'Content-Type': 'application/json' },

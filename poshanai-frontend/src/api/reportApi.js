@@ -5,6 +5,15 @@ export async function getReports() {
   return Array.isArray(data) ? data : (data?.reports ?? []);
 }
 
+export async function getReportsPage(page = 1, limit = 50) {
+  const response = await client.get('/reports', { params: { page, limit } });
+  const data = payloadFrom(response);
+  return {
+    reports: Array.isArray(data) ? data : (data?.reports ?? []),
+    pagination: response.data?.pagination ?? data?.pagination ?? null,
+  };
+}
+
 export async function uploadReport(fileOrFormData) {
   let body = fileOrFormData;
   if (!(typeof FormData !== 'undefined' && fileOrFormData instanceof FormData)) {

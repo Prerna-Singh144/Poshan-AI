@@ -35,18 +35,15 @@ export default function CalorieTracker() {
   const { entries, status } = useAppSelector(selectFoodLog);
   const totals = useAppSelector(selectTotals);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const loadTodayLog = useCallback(async () => {
-    setIsLoading(true);
     try {
       await dispatch(fetchTodayLog(todayDateString())).unwrap();
     } catch {
       // Keep request details and potentially sensitive server errors out of browser logs.
       console.error('Daily log request failed.');
       toast('Could not load daily logs. Please try again.', 'error');
-    } finally {
-      setIsLoading(false);
     }
   }, [dispatch, toast]);
 
@@ -75,7 +72,7 @@ export default function CalorieTracker() {
         <Button className="w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>+ Add food</Button>
       </header>
 
-      {isLoading || status === 'loading' || status === 'idle' ? <TrackerSkeleton /> : null}
+      {status === 'loading' || status === 'idle' ? <TrackerSkeleton /> : null}
 
       {status === 'error' && (
         <Card className="mt-6 text-center" role="alert">
@@ -109,8 +106,9 @@ export default function CalorieTracker() {
                 <Button className="mt-4" onClick={() => setIsModalOpen(true)}>+ Add food</Button>
               </div>
             ) : (
-              <FoodLogList entries={entries} />
+              <FoodLogList entries={entries.slice(0, visibleCount)} />
             )}
+            {entries.length > visibleCount && <Button className="mt-4 w-full" variant="secondary" onClick={() => setVisibleCount((count) => count + 10)}>Load more foods</Button>}
           </Card>
 
           <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">

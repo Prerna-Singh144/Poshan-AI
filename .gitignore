@@ -10,3 +10,18 @@ uploads/
 *.log
 .DS_Store
 /.worktrees/
+
+# Ruflo-generated machine state and local databases
+.claude-flow/metrics/
+.claude-flow/security/audit-status.json
+.claude-flow/mods/install.json
+.claude-flow/memory-package.json
+.claude/settings.json.bak-*
+.swarm/*.db
+
+# Ruflo local secrets and runtime data
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/

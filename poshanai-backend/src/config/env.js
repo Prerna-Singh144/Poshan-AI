@@ -15,6 +15,10 @@ if (!accessSecret || !refreshSecret) {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const redisUrl = process.env.REDIS_URL ?? null;
+if (nodeEnv === 'production' && !redisUrl) {
+  throw new Error('REDIS_URL is required in production for distributed rate limits and background jobs.');
+}
 const mongoTlsOverride = process.env.MONGODB_TLS;
 const mongoHost = (() => {
   try {
@@ -75,7 +79,7 @@ export const env = {
   clientOrigin: process.env.CLIENT_URL ?? process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   mongoUri: process.env.MONGODB_URI,
   mongoTls,
-  redisUrl: process.env.REDIS_URL ?? null,
+  redisUrl,
   storageType,
   s3Bucket: process.env.S3_BUCKET ?? null,
   s3Region: process.env.S3_REGION ?? null,

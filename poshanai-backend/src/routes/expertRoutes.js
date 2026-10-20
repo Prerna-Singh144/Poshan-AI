@@ -27,6 +27,7 @@ function validate(schema, source) {
   };
 }
 
+// Public expert directory; bookings remain authenticated below.
 router.get('/', validate(listSchema, 'query'), expertController.list);
 router.post('/book', verifyToken, validate(bookSchema, 'body'), expertController.book);
 

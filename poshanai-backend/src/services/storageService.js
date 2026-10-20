@@ -1,7 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -79,10 +79,11 @@ export async function uploadFile(sourcePath, key, contentType) {
   const safeKey = normalizedKey(key);
   if (env.storageType === 'local') {
     const destination = localFilePath(safeKey);
-    await mkdir(path.dirname(destination), { recursive: true });
+    await mkdir(path.dirname(destination), { recursive: true, mode: 0o700 });
+    await chmod(path.dirname(destination), 0o700);
     const content = await readFile(sourcePath);
     const encrypted = encryptBuffer(content);
-    await writeFile(destination, encrypted);
+    await writeFile(destination, encrypted, { flag: 'wx', mode: 0o600 });
     await rm(sourcePath, { force: true });
     return safeKey;
   }

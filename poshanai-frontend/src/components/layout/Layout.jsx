@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Activity, ArrowLeft, Home, Salad, UserRound, Upload, Users, FlaskConical } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../common/Toast.jsx';
@@ -7,13 +8,14 @@ import Footer from './Footer.jsx';
 import Navbar from './Navbar.jsx';
 
 const links = [
-  { to: '/', label: '← Back to Home' },
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/calorie-tracker', label: 'Calorie tracker' },
-  { to: '/experts', label: 'Connect with experts' },
-  { to: '/recommendations', label: 'Recommended tests' },
-  { to: '/profile', label: 'Profile' },
-  { to: '/upload', label: 'Upload report' },
+  { to: '/', label: 'Back to Home', Icon: ArrowLeft },
+  { to: '/dashboard', label: 'Dashboard', Icon: Home },
+  { to: '/calorie-tracker', label: 'Calorie tracker', Icon: Activity },
+  { to: '/diet-plan', label: 'Basic diet plan', Icon: Salad },
+  { to: '/experts', label: 'Connect with experts', Icon: Users },
+  { to: '/recommendations', label: 'Recommended tests', Icon: FlaskConical },
+  { to: '/profile', label: 'Profile', Icon: UserRound },
+  { to: '/upload', label: 'Upload report', Icon: Upload },
 ];
 
 function AuthenticatedNavbar({ dark, onToggleTheme, onToggleMenu }) {
@@ -100,10 +102,11 @@ export default function Layout({ children }) {
                 end={link.to === '/'}
                 onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
-                  `block rounded-lg px-4 py-3 text-sm font-medium ${isActive ? 'bg-emerald-50 text-leaf dark:bg-emerald-950 dark:text-emerald-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`
+                `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${isActive ? 'bg-emerald-50 text-leaf dark:bg-emerald-950 dark:text-emerald-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`
                 }
               >
-                {link.label}
+                <link.Icon size={18} aria-hidden="true" />
+                <span>{link.label}</span>
               </NavLink>
             ))}
           </nav>

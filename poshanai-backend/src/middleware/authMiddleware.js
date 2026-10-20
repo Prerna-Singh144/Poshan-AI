@@ -21,7 +21,10 @@ export function verifyToken(req, _res, next) {
       req.user = { id: payload.sub, _id: payload.sub, role: payload.role };
       return next();
     }
-    return User.findOne({ _id: payload.sub, status: 'active' }).select('role').lean()
+    return User.findOne({
+      _id: payload.sub,
+      status: { $nin: ['pending_deletion', 'deleted'] },
+    }).select('role').lean()
       .then((user) => {
         if (!user) return next(authError());
         req.user = { id: String(user._id), _id: user._id, role: user.role };
