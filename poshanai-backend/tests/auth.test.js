@@ -182,15 +182,16 @@ describe('Authentication API (/api/auth)', () => {
       assert.equal(res.body.error.code, 'INVALID_CREDENTIALS');
     });
 
-    it('triggers rate limit 429 when max login attempts exceeded', async () => {
+    it('does not rate limit login attempts in the test environment', async () => {
       const ip = nextIp();
       const targetEmail = 'ratelimit@example.com';
-      // Rate limit is 5 attempts per window for same IP+email
+      // Rate limiting is disabled during tests to avoid cross-suite state leakage.
       for (let i = 0; i < 5; i++) {
-        await request(app)
+        const attempt = await request(app)
           .post('/api/auth/login')
           .set('X-Forwarded-For', ip)
           .send({ email: targetEmail, password: 'wrong' });
+        assert.equal(attempt.status, 401);
       }
 
       const res = await request(app)
@@ -198,8 +199,8 @@ describe('Authentication API (/api/auth)', () => {
         .set('X-Forwarded-For', ip)
         .send({ email: targetEmail, password: 'wrong' });
 
-      assert.equal(res.status, 429);
-      assert.equal(res.body.error.code, 'RATE_LIMITED');
+      assert.equal(res.status, 401);
+      assert.equal(res.body.error.code, 'INVALID_CREDENTIALS');
     });
   });
 

@@ -239,7 +239,7 @@
         "method": "POST",
         "path": "/api/logs/add-food",
         "auth": "Access token",
-        "body": "mealType, ifctCode, and quantityGrams; macros and micronutrients are derived from IFCT.",
+        "body": "ifctCode and either grams or quantity plus measure; serving measures are converted to grams from IFCT servingUnits and macros are calculated from final grams.",
         "status": "Implemented."
       },
       {
@@ -273,15 +273,28 @@
       },
       {
         "method": "GET",
-        "path": "/api/logs/foods/search?q={query}",
+        "path": "/api/foods?q={query}",
         "auth": "Access token",
-        "status": "Implemented; returns up to 20 IFCT food matches."
+        "response": "Returns up to 20 IFCT food matches with per-100 g macros and optional servingUnits.",
+        "status": "Implemented."
+      },
+      {
+        "method": "GET",
+        "path": "/api/foods/search?q={query}",
+        "auth": "Access token",
+        "status": "Implemented as a compatibility alias for /api/foods."
       },
       {
         "method": "GET",
         "path": "/api/logs/today",
         "auth": "Access token",
         "status": "Implemented; returns today's food/supplement logs, calories, micronutrient totals, and comparison to project reference values."
+      },
+      {
+        "method": "GET",
+        "path": "/api/daily-logs/today",
+        "auth": "Access token",
+        "status": "Implemented alias for the DailyLog meal and micronutrient summary."
       },
       {
         "method": "DELETE",
@@ -540,6 +553,14 @@
     "Treat OCR and generative AI output as untrusted input; validate it and do not present it as medical diagnosis.",
     "Return non-revealing production errors; never disclose stack traces, database details, or secret configuration."
   ],
+  "security_by_default_rules": {
+    "AUTH": "Every new API route MUST use verifyToken unless the route is explicitly marked and documented as public.",
+    "IDOR": "Every user-scoped database query MUST include { userId: req.user._id } or perform an equivalent ownership check before reading, changing, exporting, or deleting the resource.",
+    "VALIDATION": "Every POST and PUT request MUST validate its input with a Joi schema and stripUnknown: true. Reject invalid input and never use client-supplied identity to establish ownership.",
+    "LOGGING": "NEVER log PII, including passwords, emails, access or refresh tokens, or health data. Use generic messages and approved redacted metadata only.",
+    "UPLOADS": "Always validate uploaded content using file magic bytes/signatures, enforce size limits, and store files privately. Never trust extensions or client MIME types alone.",
+    "SECRETS": "Never hardcode secrets. Load server-side secrets from process.env.* and keep them out of frontend VITE_* variables, source control, logs, and browser bundles."
+  },
   "team_roles": [
     {
       "role": "Member 1",

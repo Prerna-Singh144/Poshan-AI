@@ -42,9 +42,9 @@ export default function CalorieTracker() {
 
   // Optimistic: the modal closes and the rings/bars update at once. If the server rejects the
   // entry the slice rolls it back and we tell the user.
-  const handleAdd = ({ food, grams }) => {
+  const handleAdd = ({ food, grams, quantity, measure }) => {
     setIsModalOpen(false);
-    dispatch(addFoodEntry({ food, grams, date: todayDateString() }))
+    dispatch(addFoodEntry({ food, grams, quantity, measure, date: todayDateString() }))
       .unwrap()
       .catch((message) => toast(`Could not add ${food.foodName}. ${message}`, 'error'));
   };

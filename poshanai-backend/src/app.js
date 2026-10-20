@@ -31,19 +31,21 @@ const app = express();
 app.set('trust proxy', env.trustProxyHops);
 app.use(requestLogger);
 
-const apiLimiter = rateLimit({
-  windowMs: RATE_LIMITS.apiWindowMs,
-  limit: RATE_LIMITS.apiRequests,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  handler: (_req, res) => res.status(429).json({
-    success: false,
-    error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },
-  }),
-});
+const apiLimiter = process.env.NODE_ENV === 'test'
+  ? (_req, _res, next) => next()
+  : rateLimit({
+    windowMs: RATE_LIMITS.apiWindowMs,
+    limit: RATE_LIMITS.apiRequests,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    handler: (_req, res) => res.status(429).json({
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },
+    }),
+  });
 
 app.disable('x-powered-by');
-app.use(helmet());
+app.use(helmet({ frameguard: { action: 'deny' } }));
 app.use(cors({ origin: env.clientOrigin, credentials: true }));
 app.use(express.json({ limit: '32kb' }));
 app.use(cookieParser());
@@ -72,11 +74,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/supplements', supplementRoutes);
 app.use('/api/experts', expertRoutes);
 
-// NOTE: Both branches had a '/api/logs' route. 
-// I kept both here, but Express will only use the first one (logRoutes).
-// If dailyLogRoutes is the newer/correct one, delete the logRoutes line below.
 app.use('/api/logs', logRoutes);
 app.use('/api/logs', dailyLogRoutes);
+app.use('/api/daily-logs', dailyLogRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

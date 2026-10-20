@@ -196,12 +196,6 @@ describe('Meal Plan API (/api/mealplans)', () => {
       assert.match(lastAiPrompt, /The user is deficient in Iron \(LOW, 8 µg\/dL\); Vitamin B12 \(LOW, 120 pg\/mL\)/);
       assert.match(lastAiPrompt, /SEVERE VITAMIN B12 DEFICIENCY/);
       assert.match(lastAiPrompt, /nutrientTargets/);
-      console.log('Iron + severe B12 generation output:', JSON.stringify({
-        targetDeficiencies: res.body.data.targetDeficiencies,
-        firstMeal: res.body.data.meals[0],
-        supplementGuidance: res.body.data.supplementGuidance,
-        disclaimer: res.body.data.disclaimer,
-      }));
     });
 
     it('rejects request when reportId is missing', async () => {

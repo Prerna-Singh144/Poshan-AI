@@ -19,6 +19,9 @@ export default function FoodLogList({ entries }) {
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{entry.foodName}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
+                {entry.quantity && entry.measure && entry.measure !== 'grams' && (
+                  <>{entry.quantity} {entry.measure}{entry.quantity === 1 ? '' : 's'} · </>
+                )}
                 {formatAmount(entry.grams)} g
                 {entry.pending && <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">· Saving…</span>}
               </p>

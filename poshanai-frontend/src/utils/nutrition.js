@@ -9,6 +9,35 @@ export const NEAR_LIMIT_RATIO = 0.9;
 export const MIN_GRAMS = 1;
 export const MAX_GRAMS = 2000;
 
+export function getFoodMeasures(food = {}) {
+  const measures = Object.entries(food.servingUnits ?? {})
+    .filter(([measure, grams]) => measure !== 'defaultUnit' && Number.isFinite(grams) && grams > 0)
+    .map(([measure, grams]) => ({ measure, grams }));
+  return measures.length > 0 ? measures : [{ measure: 'grams', grams: 1 }];
+}
+
+export function getDefaultFoodMeasure(food = {}) {
+  return getFoodMeasures(food).some(({ measure }) => measure === food.servingUnits?.defaultUnit)
+    ? food.servingUnits.defaultUnit
+    : 'grams';
+}
+
+export function getDefaultFoodQuantity(measure) {
+  return measure === 'grams' ? 100 : 1;
+}
+
+export function getServingGrams(food = {}, measure = 'grams', quantity = 1) {
+  const gramsPerServing = measure === 'grams'
+    ? 1
+    : food.servingUnits?.[measure];
+  if (!Number.isFinite(gramsPerServing) || gramsPerServing <= 0) return 0;
+  return Math.round(gramsPerServing * Number(quantity) * 10) / 10;
+}
+
+export function getPortionNutrients(food, grams) {
+  return scaleNutrients(food.nutrients, grams);
+}
+
 // Brand colours: Forest Green #1E5631, Accent Orange #F57C00, plus a red for "over limit".
 // Dark-mode shades are lighter so they stay visible on dark surfaces; labels use darker/lighter
 // text shades to keep contrast. Full class strings so Tailwind can find them.

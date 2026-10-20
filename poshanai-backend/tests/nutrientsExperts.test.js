@@ -55,13 +55,13 @@ beforeEach(async () => {
 test('today log returns every micronutrient with profile-specific RDA comparison', async () => {
   const { token, ip } = await registerUser();
   const addedFood = await request(app)
-    .post('/api/logs/add-food')
+    .post('/api/daily-logs/add-food')
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip)
     .send({ mealType: 'breakfast', ifctCode: 'A001', quantityGrams: 100 });
   assert.equal(addedFood.status, 201);
   const response = await request(app)
-    .get('/api/logs/today')
+    .get('/api/daily-logs/today')
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip);
 
@@ -72,12 +72,6 @@ test('today log returns every micronutrient with profile-specific RDA comparison
   assert.equal(vitaminA.status, 'unknown');
   assert.equal(vitaminA.dataUnavailable, true);
   assert.equal(response.body.data.micronutrients.totals.iron, 9.33);
-  console.log('GET /api/logs/today HTTP 200 micronutrient response:', JSON.stringify({
-    totals: response.body.data.micronutrients.totals,
-    rdaComparison: response.body.data.micronutrients.rdaComparison.map(({
-      nutrient, consumed, unit, rda, dataUnavailable,
-    }) => ({ nutrient, consumed, unit, rda, dataUnavailable })),
-  }));
 });
 
 test('expert list supports filters and authenticated booking rejects an already booked slot', async () => {
@@ -100,7 +94,6 @@ test('expert list supports filters and authenticated booking rejects an already 
   assert.equal(listing.status, 200);
   assert.equal(listing.body.data.count, 1);
   assert.equal(listing.body.data.experts[0].id, expert.id);
-  console.log('Expert list API response:', JSON.stringify(listing.body));
 
   const booking = await request(app)
     .post('/api/experts/book')

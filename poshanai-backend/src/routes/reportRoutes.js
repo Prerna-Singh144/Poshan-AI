@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import uploadReportFile, { cleanupUploadedFile } from '../middleware/uploadMiddleware.js';
@@ -6,6 +7,9 @@ import * as reportController from '../controllers/reportController.js';
 import validationError from '../utils/validationError.js';
 
 const router = Router();
+const uploadLimiter = process.env.NODE_ENV === 'test'
+  ? (_req, _res, next) => next()
+  : rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 const reportIdSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
@@ -32,7 +36,7 @@ const paginationSchema = Joi.object({
 }).unknown(true);
 
 function validateReportId(req, _res, next) {
-  const { error, value } = reportIdSchema.validate(req.params, { abortEarly: false });
+  const { error, value } = reportIdSchema.validate(req.params, { abortEarly: false, stripUnknown: true });
   if (error) return next(validationError());
   req.params = value;
   return next();
@@ -46,7 +50,7 @@ function validateReportPagination(req, _res, next) {
 }
 
 function validateEmptyUploadBody(req, _res, next) {
-  const { error } = emptyBodySchema.validate(req.body ?? {}, { abortEarly: false });
+  const { error } = emptyBodySchema.validate(req.body ?? {}, { abortEarly: false, stripUnknown: true });
   if (!error) return next();
 
   cleanupUploadedFile(req.file)
@@ -59,14 +63,14 @@ function validateEmptyUploadBody(req, _res, next) {
     });
 }
 
-const uploadRoute = [verifyToken, uploadReportFile, validateEmptyUploadBody, reportController.upload];
+const uploadRoute = [verifyToken, uploadLimiter, uploadReportFile, validateEmptyUploadBody, reportController.upload];
 
 router.post('/upload', ...uploadRoute);
 router.post('/', ...uploadRoute);
 router.get('/', verifyToken, validateReportPagination, reportController.list);
 router.get('/:id', verifyToken, validateReportId, reportController.getById);
 router.patch('/:id/review', verifyToken, validateReportId, (req, _res, next) => {
-  const { error, value } = reviewSchema.validate(req.body, { abortEarly: false, convert: true });
+  const { error, value } = reviewSchema.validate(req.body, { abortEarly: false, convert: true, stripUnknown: true });
   if (error) return next(validationError());
   req.body = value;
   return next();

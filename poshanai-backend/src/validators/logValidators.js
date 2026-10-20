@@ -25,9 +25,21 @@ const searchSchema = Joi.object({
 
 const addFoodSchema = Joi.object({
   ifctCode: Joi.string().trim().pattern(/^[A-Za-z0-9_-]{2,20}$/).required(),
-  grams: Joi.number().min(MIN_GRAMS).max(MAX_GRAMS).precision(1).required(),
+  grams: Joi.number().min(MIN_GRAMS).max(MAX_GRAMS).precision(1),
+  quantity: Joi.number().integer().min(1).max(MAX_GRAMS),
+  measure: Joi.string().trim().pattern(/^[a-z][a-z0-9_-]{0,29}$/),
   date: dateField,
 })
+  .custom((value, helpers) => {
+    const hasQuantity = value.quantity !== undefined;
+    const hasMeasure = value.measure !== undefined;
+    const hasGrams = value.grams !== undefined;
+
+    if ((!hasGrams && !hasQuantity) || hasQuantity !== hasMeasure || (hasGrams && hasQuantity)) {
+      return helpers.error('any.invalid');
+    }
+    return value;
+  })
   // Ownership comes from the JWT and nutrition from IFCT: reject userId, calories, etc.
   .unknown(false)
   .required();
@@ -36,7 +48,7 @@ const todaySchema = Joi.object({ date: dateField }).unknown(false);
 
 function validate(schema, source) {
   return (req, _res, next) => {
-    const { error, value } = schema.validate(req[source] ?? {}, { abortEarly: false, convert: true });
+    const { error, value } = schema.validate(req[source] ?? {}, { abortEarly: false, convert: true, stripUnknown: true });
     if (error) return next(validationError());
     req[source] = value;
     return next();

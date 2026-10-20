@@ -57,13 +57,13 @@ function setRefreshCookie(res, token) {
   res.cookie(env.refreshCookieName, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/api/auth',
     maxAge: AUTH_SETTINGS.refreshCookieMaxAgeMs,
   });
   res.cookie(env.refreshCookiePresenceName, '1', {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: AUTH_SETTINGS.refreshCookieMaxAgeMs,
   });
@@ -73,12 +73,12 @@ function clearRefreshCookie(res) {
   res.clearCookie(env.refreshCookieName, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/api/auth',
   });
   res.clearCookie(env.refreshCookiePresenceName, {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   });
 }

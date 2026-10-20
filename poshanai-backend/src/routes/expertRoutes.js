@@ -20,7 +20,7 @@ const bookSchema = Joi.object({
 
 function validate(schema, source) {
   return (req, _res, next) => {
-    const { error, value } = schema.validate(req[source] ?? {}, { abortEarly: false, convert: true });
+    const { error, value } = schema.validate(req[source] ?? {}, { abortEarly: false, convert: true, stripUnknown: true });
     if (error) return next(validationError());
     req[source] = value;
     return next();

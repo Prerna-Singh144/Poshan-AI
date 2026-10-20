@@ -1,14 +1,22 @@
 import Report from '../models/Report.js';
 import User from '../models/User.js';
 import MealPlan from '../models/MealPlan.js';
+import LifestyleProfile from '../models/LifestyleProfile.js';
+import DailyLog from '../models/DailyLog.js';
+import FoodLog from '../models/FoodLog.js';
+import SupplementLog from '../models/SupplementLog.js';
+import Notification from '../models/Notification.js';
+import ExpertAppointment from '../models/ExpertAppointment.js';
+import AuditLog from '../models/AuditLog.js';
 import { env } from '../config/env.js';
 import { COMPLIANCE_SETTINGS } from '../config/constants.js';
 import { deleteFile } from '../services/storageService.js';
 import { logAuditEvent } from '../services/auditService.js';
 import logger from '../utils/logger.js';
 
-export async function sendRetentionWarningEmail(userEmail, report) {
-  logger.info(`[Notification] Retention notice sent to ${userEmail}: Report ${report._id} will be deleted in 7 days in accordance with the 365-day DPDP retention policy.`);
+export async function sendRetentionWarningEmail(_userEmail, _report) {
+  // Notification delivery must never include health identifiers in application logs.
+  logger.info('[Notification] Retention notice processed.');
   return true;
 }
 
@@ -51,7 +59,7 @@ export async function runRetentionSweep() {
       try {
         await deleteFile(report.fileUrl);
       } catch (fileErr) {
-        logger.warn(`Could not delete storage file for expired report ${report._id}:`, fileErr);
+        throw fileErr;
       }
 
       await User.updateOne(
@@ -78,7 +86,7 @@ export async function runRetentionSweep() {
 
       reportsDeleted++;
     } catch (error) {
-      logger.error(`Error deleting expired report ${report._id}:`, error);
+      logger.error('Error deleting expired report.', error);
     }
   }
 
@@ -96,34 +104,24 @@ export async function runAccountDeletionSweep() {
 
   for (const user of usersToPurge) {
     try {
-      const userReports = await Report.find({ userId: user._id });
-      for (const report of userReports) {
-        try {
-          await deleteFile(report.fileUrl);
-        } catch (fileErr) {
-          logger.warn(`Could not delete file for user ${user._id} report ${report._id}:`, fileErr);
-        }
-      }
-
+      const userReports = await Report.find({ userId: user._id }).select('fileUrl');
+      // Keep the user record pending if any private file cannot be removed; the next sweep retries.
+      for (const report of userReports) await deleteFile(report.fileUrl);
       await Promise.all([
         Report.deleteMany({ userId: user._id }),
         MealPlan.deleteMany({ userId: user._id }),
+        LifestyleProfile.deleteMany({ userId: user._id }),
+        DailyLog.deleteMany({ userId: user._id }),
+        FoodLog.deleteMany({ userId: user._id }),
+        SupplementLog.deleteMany({ userId: user._id }),
+        Notification.deleteMany({ userId: user._id }),
+        ExpertAppointment.deleteMany({ userId: user._id }),
+        AuditLog.deleteMany({ userId: user._id }),
       ]);
-
-      await logAuditEvent({
-        userId: user._id,
-        action: 'account_hard_deleted',
-        metadata: {
-          deletedAt: user.deletedAt,
-          scheduledDeletionDate: user.deletionScheduledAt,
-          purgedAt: now,
-        },
-      });
-
       await User.deleteOne({ _id: user._id });
       accountsPurged++;
     } catch (error) {
-      logger.error(`Error purging soft-deleted user ${user._id}:`, error);
+      logger.error('Error purging soft-deleted account.', error);
     }
   }
 

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import * as mealPlanController from '../controllers/mealPlanController.js';
@@ -6,6 +7,9 @@ import { supportedRegions } from '../rag/ragService.js';
 import validationError from '../utils/validationError.js';
 
 const router = Router();
+const generationLimiter = process.env.NODE_ENV === 'test'
+  ? (_req, _res, next) => next()
+  : rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false });
 const allergyOptions = [
   'nuts', 'peanut', 'peanuts', 'dairy', 'milk', 'eggs', 'egg', 'fish', 'shellfish',
   'soy', 'gluten', 'wheat', 'legumes', 'poultry', 'mushrooms', 'sesame', 'seeds',
@@ -38,7 +42,7 @@ const listSchema = Joi.object({
 
 function validate(schema, source) {
   return (req, _res, next) => {
-    const { error, value } = schema.validate(req[source] ?? {}, { abortEarly: false });
+    const { error, value } = schema.validate(req[source] ?? {}, { abortEarly: false, stripUnknown: true });
     if (error) return next(validationError());
     if (source === 'body') req.body = value;
     if (source === 'params') req.params = value;
@@ -52,6 +56,7 @@ function validate(schema, source) {
 router.post(
   '/generate',
   verifyToken,
+  generationLimiter,
   validate(generateSchema, 'body'),
   mealPlanController.generate,
 );

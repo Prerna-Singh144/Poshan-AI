@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import Joi from 'joi';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import * as dailyLogController from '../controllers/dailyLogController.js';
@@ -7,6 +8,9 @@ import { getSupplementIds } from '../services/supplementCatalogService.js';
 import { MICRONUTRIENTS } from '../config/constants.js';
 
 const router = Router();
+const aiLimiter = process.env.NODE_ENV === 'test'
+  ? (_req, _res, next) => next()
+  : rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 const addFoodSchema = Joi.object({
   mealType: Joi.string().valid('breakfast', 'lunch', 'dinner', 'snack').required(),
   ifctCode: Joi.string().trim().uppercase().min(1).max(20).required(),
@@ -51,9 +55,9 @@ function validate(schema, source) {
 
 router.post('/add-food', verifyToken, validate(addFoodSchema, 'body'), dailyLogController.addFood);
 router.post('/add-supplement', verifyToken, validate(addSupplementSchema, 'body'), dailyLogController.addSupplement);
-router.post('/smart-log', verifyToken, validate(aiParseSchema, 'body'), dailyLogController.smartLog);
+router.post('/smart-log', verifyToken, aiLimiter, validate(aiParseSchema, 'body'), dailyLogController.smartLog);
 router.get('/foods/search', verifyToken, validate(foodSearchSchema, 'query'), dailyLogController.searchFoods);
-router.post('/ai-parse', verifyToken, validate(aiParseSchema, 'body'), dailyLogController.parseFoods);
+router.post('/ai-parse', verifyToken, aiLimiter, validate(aiParseSchema, 'body'), dailyLogController.parseFoods);
 router.get('/today', verifyToken, dailyLogController.getToday);
 router.delete('/:logId', verifyToken, validate(logIdSchema, 'params'), dailyLogController.removeFood);
 

@@ -3,6 +3,7 @@ import { logger, runWithRequestId } from '../utils/logger.js';
 
 export default function requestLogger(req, res, next) {
   const requestId = randomUUID();
+  req.id = requestId;
   const startedAt = process.hrtime.bigint();
   res.setHeader('X-Request-ID', requestId);
 
@@ -15,7 +16,6 @@ export default function requestLogger(req, res, next) {
         ...request,
         status: res.statusCode,
         durationMs: Math.round(durationMs * 100) / 100,
-        ...(req.user?.id ? { userId: req.user.id } : {}),
       });
     });
     next();

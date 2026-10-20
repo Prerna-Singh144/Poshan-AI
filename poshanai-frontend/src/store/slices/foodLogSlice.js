@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSelector, createSlice } from '@reduxjs/toolkit';
 import { getApiError } from '../../api/client.js';
 import { addFood, getTodayLog } from '../../api/foodLogApi.js';
-import { scaleNutrients, sumNutrients } from '../../utils/nutrition.js';
+import { getPortionNutrients, getServingGrams, sumNutrients } from '../../utils/nutrition.js';
 
 export const fetchTodayLog = createAsyncThunk(
   'foodLog/fetchToday',
@@ -21,9 +21,9 @@ export const fetchTodayLog = createAsyncThunk(
  */
 export const addFoodEntry = createAsyncThunk(
   'foodLog/addFood',
-  async ({ food, grams, date }, { rejectWithValue }) => {
+  async ({ food, quantity, measure, date }, { rejectWithValue }) => {
     try {
-      const { entry } = await addFood({ ifctCode: food.ifctCode, grams, date });
+      const { entry } = await addFood({ ifctCode: food.ifctCode, quantity, measure, date });
       return entry;
     } catch (error) {
       return rejectWithValue(getApiError(error));
@@ -52,7 +52,8 @@ const foodLogSlice = createSlice({
         state.error = action.payload ?? action.error.message;
       })
       .addCase(addFoodEntry.pending, (state, action) => {
-        const { food, grams, date } = action.meta.arg;
+        const { food, quantity, measure, date } = action.meta.arg;
+        const grams = getServingGrams(food, measure, quantity);
         state.entries.push({
           id: `pending-${action.meta.requestId}`,
           requestId: action.meta.requestId,
@@ -61,7 +62,9 @@ const foodLogSlice = createSlice({
           ifctCode: food.ifctCode,
           foodName: food.foodName,
           grams,
-          ...scaleNutrients(food.nutrients, grams),
+          quantity,
+          measure,
+          ...getPortionNutrients(food, grams),
         });
       })
       .addCase(addFoodEntry.fulfilled, (state, action) => {

@@ -1,12 +1,27 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const csvPath = path.resolve('package/index.csv');
+const csvPath = path.resolve(__dirname, '../../package/index.csv');
 const outputPath = path.resolve(__dirname, '../../data/ifct_2017.json');
+
+if (!fs.existsSync(csvPath)) {
+  if (!fs.existsSync(outputPath)) {
+    throw new Error(`IFCT source CSV is missing at ${csvPath}, and no checked-in dataset exists at ${outputPath}.`);
+  }
+
+  const existingData = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+  if (!Array.isArray(existingData) || existingData.length === 0) {
+    throw new Error(`Checked-in IFCT dataset is invalid or empty: ${outputPath}.`);
+  }
+
+  logger.warn('IFCT source CSV is unavailable; keeping the checked-in dataset.');
+  process.exit(0);
+}
 
 const content = fs.readFileSync(csvPath, 'utf8');
 const lines = content.split('\n');
@@ -31,6 +46,21 @@ function parseCsvLine(line) {
 }
 
 const round = (val) => (val === null || val === undefined || isNaN(val) ? 0 : Math.round(Number(val) * 100) / 100);
+
+const SERVING_UNITS_BY_CODE = {
+  A013: { bowl: 150, cup: 200, defaultUnit: 'cup' },
+  A015: { bowl: 150, cup: 200, defaultUnit: 'cup' },
+  E001: { small: 150, medium: 180, large: 220, defaultUnit: 'medium' },
+  E002: { small: 150, medium: 180, large: 220, defaultUnit: 'medium' },
+  E003: { small: 150, medium: 180, large: 220, defaultUnit: 'medium' },
+  E004: { small: 150, medium: 180, large: 220, defaultUnit: 'medium' },
+  E009: { small: 101, medium: 118, large: 136, defaultUnit: 'medium' },
+  E010: { small: 101, medium: 118, large: 136, defaultUnit: 'medium' },
+  E011: { small: 101, medium: 118, large: 136, defaultUnit: 'medium' },
+  E012: { small: 101, medium: 118, large: 136, defaultUnit: 'medium' },
+  M001: { small: 40, medium: 45, large: 50, defaultUnit: 'large' },
+  M004: { small: 40, medium: 45, large: 50, defaultUnit: 'large' },
+};
 
 const records = [];
 
@@ -128,7 +158,7 @@ for (let i = 1; i < lines.length; i++) {
   const feVal = parseFloat(row[177]);
   const iron = !isNaN(feVal) && feVal >= 0 ? round(feVal * 1000) : 0;
 
-  records.push({
+  const record = {
     ifctCode,
     foodName,
     category,
@@ -145,9 +175,14 @@ for (let i = 1; i < lines.length; i++) {
       vitaminD,
       vitaminB12: null,
     },
-  });
+  };
+
+  if (SERVING_UNITS_BY_CODE[ifctCode]) {
+    record.servingUnits = SERVING_UNITS_BY_CODE[ifctCode];
+  }
+  records.push(record);
 }
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, JSON.stringify(records, null, 2), 'utf8');
-console.log(`Generated ${records.length} IFCT 2017 foods in ${outputPath}`);
+logger.info(`Generated ${records.length} IFCT 2017 food records.`);

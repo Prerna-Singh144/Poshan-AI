@@ -4,12 +4,25 @@ import { env } from './config/env.js';
 import logger from './utils/logger.js';
 import { closeOcrQueue } from './jobs/queue.js';
 import { closeHealthRedis } from './services/healthService.js';
+import { runAllSweepers } from './jobs/sweeper.js';
 
 let server;
 let shuttingDown = false;
+let maintenanceTimer;
+
+async function runMaintenanceSweep() {
+  try {
+    await runAllSweepers();
+  } catch {
+    logger.error('Scheduled data-retention sweep failed.');
+  }
+}
 
 async function startServer() {
   await connectDB();
+  void runMaintenanceSweep();
+  maintenanceTimer = setInterval(() => void runMaintenanceSweep(), 60 * 60 * 1000);
+  maintenanceTimer.unref();
   server = app.listen(env.port, '0.0.0.0', () => {
     logger.info(`PoshanAI API listening on port ${env.port}`);
   });
@@ -18,6 +31,7 @@ async function startServer() {
 async function shutdown(reason, error) {
   if (shuttingDown) return;
   shuttingDown = true;
+  if (maintenanceTimer) clearInterval(maintenanceTimer);
   logger.error(reason, error);
 
   if (server) {
@@ -39,6 +53,7 @@ process.on('uncaughtException', (error) => {
 async function gracefulShutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
+  if (maintenanceTimer) clearInterval(maintenanceTimer);
   if (server) await new Promise((resolve) => server.close(resolve));
   await Promise.all([closeOcrQueue(), closeHealthRedis()]);
   process.exit(0);
