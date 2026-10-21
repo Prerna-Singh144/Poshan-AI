@@ -12,6 +12,7 @@ function userPayload(user) {
     id: user.id,
     name: user.name,
     email: user.email,
+    emailVerified: Boolean(user.emailVerified),
     profile: user.profile,
     onboardingCompleted: Boolean(user.onboardingCompleted),
     role: user.role,
@@ -54,7 +55,7 @@ function issueSession(user, deviceInfo = 'Unknown device') {
   };
 }
 
-function setRefreshCookie(res, token) {
+export function setRefreshCookie(res, token) {
   res.cookie(env.refreshCookieName, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -70,7 +71,7 @@ function setRefreshCookie(res, token) {
   });
 }
 
-function clearRefreshCookie(res) {
+export function clearRefreshCookie(res) {
   res.clearCookie(env.refreshCookieName, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -142,6 +143,14 @@ export const register = asyncHandler(async (req, res) => {
   return res.status(201).json({ success: true, data: issued.data });
 });
 
+export async function issueAuthenticatedSession(user, req, res, action = 'login') {
+  const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
+  await appendRefreshToken(user._id, issued.refreshTokenEntry);
+  setRefreshCookie(res, issued.refreshToken);
+  await logAuditEvent({ userId: user._id, action, req });
+  return issued.data;
+}
+
 export const login = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: req.body.email.toLowerCase() }).select('+passwordHash');
   if (!user || !(await user.verifyPassword(req.body.password))) {
@@ -152,13 +161,8 @@ export const login = asyncHandler(async (req, res) => {
     throw httpError(403, 'ACCOUNT_DELETION_PENDING', 'This account is scheduled for deletion.');
   }
 
-  const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
-  await appendRefreshToken(user._id, issued.refreshTokenEntry);
-  setRefreshCookie(res, issued.refreshToken);
-
-  await logAuditEvent({ userId: user._id, action: 'login', req });
-
-  return res.json({ success: true, data: issued.data });
+  const data = await issueAuthenticatedSession(user, req, res);
+  return res.json({ success: true, data });
 });
 
 export const refresh = asyncHandler(async (req, res) => {

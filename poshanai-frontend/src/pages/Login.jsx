@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,9 +6,6 @@ import Button from '../components/common/Button.jsx';
 import Loader from '../components/common/Loader.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAuth } from '../hooks/useAuth.js';
-
-import '../components/ui/threeui/threeui.css';
-const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx'));
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
@@ -133,6 +129,22 @@ export default function Login() {
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
+        <p className="mt-6 text-sm text-[#58655a] dark:text-slate-300">
+          <Link
+            className="font-semibold text-[#244b36] underline underline-offset-4 hover:text-[#173a2c] dark:text-emerald-300 dark:hover:text-emerald-200"
+            to="/login-otp?purpose=login"
+          >
+            Sign in with OTP
+          </Link>
+        </p>
+        <p className="mt-3 text-sm text-[#58655a] dark:text-slate-300">
+          <Link
+            className="font-semibold text-[#244b36] underline underline-offset-4 hover:text-[#173a2c] dark:text-emerald-300 dark:hover:text-emerald-200"
+            to="/login-otp?purpose=reset-password"
+          >
+            Forgot password?
+          </Link>
+        </p>
         <p className="mt-6 text-sm text-[#58655a] dark:text-slate-300">
           Don&apos;t have an account?{' '}
           <Link

@@ -1,0 +1,91 @@
+{
+  "info": {
+    "_postman_id": "4c7577f4-0130-4f03-a15e-ccacdbd824ee",
+    "name": "PoshanAI Email OTP",
+    "description": "Request and verify email OTPs for login, password reset, and email verification. In non-production, copy dev_otp from the request response into the otp variable automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "email", "value": "you@example.com" },
+    { "key": "purpose", "value": "login" },
+    { "key": "otp", "value": "" },
+    { "key": "resetToken", "value": "" },
+    { "key": "newPassword", "value": "replace-with-a-new-password" }
+  ],
+  "item": [
+    {
+      "name": "Request OTP",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"purpose\": \"{{purpose}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/otp/request",
+        "description": "Set purpose to login, reset-password, or verify-email. In development, dev_otp is captured into the otp collection variable."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('request returns generic success response', () => {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const data = pm.response.json().data || {};",
+              "if (data.dev_otp) pm.collectionVariables.set('otp', data.dev_otp);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verify OTP",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"purpose\": \"{{purpose}}\",\n  \"otp\": \"{{otp}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/otp/verify",
+        "description": "Successful login sets an HTTP-only refresh cookie and returns an access token. Reset-password returns a short-lived resetToken. Verify-email marks the address verified."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('OTP is accepted', () => {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().success).to.eql(true);",
+              "});",
+              "const data = pm.response.json().data || {};",
+              "if (data.resetToken) pm.collectionVariables.set('resetToken', data.resetToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Complete Password Reset",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resetToken\": \"{{resetToken}}\",\n  \"password\": \"{{newPassword}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/otp/reset-password"
+      }
+    }
+  ]
+}
