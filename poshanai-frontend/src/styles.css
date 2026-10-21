@@ -1,3 +1,7 @@
+/* RetroUI styles are available globally, but its pixel look is opted into onboarding and auth flows only. */
+@import 'pixel-retroui/dist/index.css';
+@import 'pixel-retroui/dist/fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,6 +24,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  font-family: inherit;
 }
 
 @keyframes shimmer {

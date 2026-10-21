@@ -1,8 +1,8 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { ProgressBar } from 'pixel-retroui';
 
 export default function OnboardingProgress({ step, total, title }) {
-  const reduceMotion = useReducedMotion();
   const current = step + 1;
+  const progress = (current / total) * 100;
   return (
     <div>
       <p className="text-sm font-semibold text-leaf dark:text-emerald-300" aria-live="polite">
@@ -16,14 +16,11 @@ export default function OnboardingProgress({ step, total, title }) {
         aria-valuemax={total}
         aria-valuenow={current}
         aria-valuetext={`Step ${current} of ${total}: ${title}`}
-        className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+        className="mt-2"
       >
-        <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-leaf to-emerald-500"
-          initial={false}
-          animate={{ width: `${(current / total) * 100}%` }}
-          transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 140, damping: 22 }}
-        />
+        <div aria-hidden="true">
+          <ProgressBar progress={progress} size="sm" color="#1E5631" borderColor="#000000" />
+        </div>
       </div>
     </div>
   );

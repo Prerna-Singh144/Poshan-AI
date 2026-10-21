@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+// Keep RetroUI components scoped to onboarding and authentication flows.
+import { Button as RetroButton } from 'pixel-retroui';
+import '../components/ui/threeui/threeui.css';
+
+const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx').then((module) => ({ default: module.WarpFieldBackground })));
 import { getApiError } from '../api/client.js';
 import { submitOnboarding } from '../api/lifestyleApi.js';
-import { Button, Card, useToast } from '../components/common/index.js';
+import { Card, useToast } from '../components/common/index.js';
 import OnboardingProgress from '../components/lifestyle/OnboardingProgress.jsx';
 import {
   ChipGroup, ChoiceGrid, ConsentCheckbox, RangeField, Stepper,
@@ -86,7 +91,11 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <>
+    <div className="auth-warp-background fixed inset-x-0 bottom-0 top-16 z-0" aria-hidden="true">
+      <Suspense fallback={null}><WarpFieldBackground variant="keycaps" speed={0.45} streakOpacity={0.18} tileOpacity={0.45} fov={75} hue={0} saturation={1.2} brightness={0.75} /></Suspense>
+    </div>
+    <div className="font-minecraft relative z-10 mx-auto w-full max-w-2xl">
       <header className="mb-5">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">Tell us about your routine</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -147,16 +156,35 @@ export default function Onboarding() {
 
           <div className="sticky bottom-0 flex gap-3 border-t border-slate-100 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 sm:px-6">
             {step > 0 && (
-              <Button variant="secondary" className="flex-1 sm:flex-none sm:px-6" onClick={() => goTo(step - 1)} disabled={isSubmitting}>
+              <RetroButton
+                type="button"
+                bg="#1E5631"
+                textColor="#FFFFFF"
+                borderColor="#000000"
+                shadow="#000000"
+                className="mx-0 my-0 flex-1 px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none sm:px-6"
+                onClick={() => goTo(step - 1)}
+                disabled={isSubmitting}
+              >
                 Back
-              </Button>
+              </RetroButton>
             )}
-            <Button type="submit" className="flex-1 sm:flex-none sm:px-8" loading={isSubmitting}>
+            <RetroButton
+              type="submit"
+              bg="#1E5631"
+              textColor="#FFFFFF"
+              borderColor="#000000"
+              shadow="#000000"
+              className="mx-0 my-0 flex-1 px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none sm:px-8"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+            >
               {step === TOTAL_STEPS - 1 ? 'See my tests' : 'Next'}
-            </Button>
+            </RetroButton>
           </div>
         </form>
       </Card>
     </div>
+    </>
   );
 }

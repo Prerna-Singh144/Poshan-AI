@@ -1,6 +1,6 @@
 import Report from '../models/Report.js';
 import { extractTextFromReport } from './ocrService.js';
-import { flagBiomarkerValue, normalizeBiomarkerValue } from './reportParser.js';
+import { normalizeBiomarkerValue } from './reportParser.js';
 import { cleanupDownloadedFile, downloadFile } from './storageService.js';
 
 export async function processReportOcr(reportId) {

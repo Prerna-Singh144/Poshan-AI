@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*-pre-r-pm-*'
+applyTo: "**/*-pre-r-pm-*"
 ---
 
 ## Instructions
@@ -39,9 +39,9 @@ Ensure the scripts are robust, readable, and follow Postman scripting standards.
 // @ts-check
 // Types from @postman/test-script-types-plugin are available
 // Set a dynamic timestamp variable
-pm.environment.set('currentTimestamp', Date.now());
+pm.environment.set("currentTimestamp", Date.now());
 // Generate a random UUID and set as a variable
-pm.environment.set('uuid', pm.variables.replaceIn('{{$guid}}'));
+pm.environment.set("uuid", pm.variables.replaceIn("{{$guid}}"));
 ```
 
 **Note:**
