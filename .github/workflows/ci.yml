@@ -95,11 +95,13 @@ jobs:
 
       - name: Audit backend production dependencies
         if: matrix.check == 'security'
-        run: npm audit --prefix poshanai-backend --omit=dev --audit-level=high
+        working-directory: poshanai-backend
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Audit frontend production dependencies
         if: matrix.check == 'security'
-        run: npm audit --prefix poshanai-frontend --omit=dev --audit-level=high
+        working-directory: poshanai-frontend
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build backend image (no push)
         if: matrix.check == 'docker'
