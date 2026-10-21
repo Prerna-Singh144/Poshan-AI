@@ -31,7 +31,9 @@
     "mongoose": "^8.9.5",
     "mongoose-encryption": "^2.1.2",
     "multer": "^2.4.0",
+    "nodemailer": "^10.1.7",
     "pdfjs-dist": "^6.4.299",
+    "resend": "^6.34.1",
     "tesseract.js": "^7.0.0",
     "winston": "^3.19.0"
   },

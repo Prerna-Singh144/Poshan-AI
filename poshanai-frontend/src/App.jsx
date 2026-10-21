@@ -8,6 +8,7 @@ import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
+import OtpLogin from './pages/OtpLogin.jsx';
 import Register from './pages/Register.jsx';
 import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
@@ -36,6 +37,7 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/login-otp" element={<OtpLogin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/food-library" element={<Suspense fallback={<RouteLoading />}><FoodLibrary /></Suspense>} />
           </Route>

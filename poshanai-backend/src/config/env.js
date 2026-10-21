@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { createHash, createHmac } from 'node:crypto';
+import { OTP_SETTINGS } from './constants.js';
 import logger from '../utils/logger.js';
 
 const required = ['MONGODB_URI'];
@@ -15,6 +16,14 @@ if (!accessSecret || !refreshSecret) {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const otpExpiryMinutes = Number(process.env.OTP_EXPIRY_MINUTES ?? OTP_SETTINGS.defaultExpiryMinutes);
+const otpMaxAttempts = Number(process.env.OTP_MAX_ATTEMPTS ?? OTP_SETTINGS.defaultMaxAttempts);
+if (!Number.isInteger(otpExpiryMinutes) || otpExpiryMinutes < 1 || otpExpiryMinutes > 15) {
+  throw new Error('OTP_EXPIRY_MINUTES must be an integer between 1 and 15.');
+}
+if (!Number.isInteger(otpMaxAttempts) || otpMaxAttempts < 1 || otpMaxAttempts > 10) {
+  throw new Error('OTP_MAX_ATTEMPTS must be an integer between 1 and 10.');
+}
 const redisUrl = process.env.REDIS_URL ?? null;
 if (nodeEnv === 'production' && !redisUrl) {
   throw new Error('REDIS_URL is required in production for distributed rate limits and background jobs.');
@@ -99,4 +108,6 @@ export const env = {
   reportRetentionDays: Number(process.env.REPORT_RETENTION_DAYS ?? 365),
   encryptionKey,
   signingKey,
+  otpExpiryMinutes,
+  otpMaxAttempts,
 };

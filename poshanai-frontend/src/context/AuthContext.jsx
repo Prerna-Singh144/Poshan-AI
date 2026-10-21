@@ -3,6 +3,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   register as apiRegister,
+  verifyOTP as apiVerifyOTP,
 } from '../api/authApi.js';
 import {
   getAccessToken,
@@ -132,6 +133,22 @@ export function AuthProvider({ children }) {
     [accessToken, setSession],
   );
 
+  const loginWithOtp = useCallback(async (email, otp) => {
+    const requestVersion = ++sessionVersion.current;
+    try {
+      const session = await apiVerifyOTP(email, otp, 'login');
+      if (!session.accessToken) throw new Error('OTP verification did not return a session.');
+      if (requestVersion !== sessionVersion.current) return null;
+      clearAllCache();
+      setSession(session);
+      setIsLoading(false);
+      return session.user;
+    } catch (error) {
+      if (requestVersion === sessionVersion.current) setIsLoading(false);
+      throw error;
+    }
+  }, [setSession]);
+
   const logout = useCallback(async () => {
     sessionVersion.current += 1;
     setIsLoading(false);
@@ -216,12 +233,13 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(accessToken),
       isLoading,
       login,
+      loginWithOtp,
       register,
       logout,
       refresh,
       markOnboardingCompleted,
     }),
-    [user, accessToken, isLoading, login, register, logout, refresh, markOnboardingCompleted],
+    [user, accessToken, isLoading, login, loginWithOtp, register, logout, refresh, markOnboardingCompleted],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -9,6 +9,15 @@ export const AUTH_SETTINGS = Object.freeze({
   bcryptSaltRounds: 12,
   refreshCookieMaxAgeMs: 7 * 24 * 60 * 60 * 1000,
   maxRefreshSessions: 5,
+  passwordResetTokenTtlMs: 10 * 60 * 1000,
+});
+
+export const OTP_SETTINGS = Object.freeze({
+  bcryptSaltRounds: 10,
+  defaultExpiryMinutes: 5,
+  defaultMaxAttempts: 3,
+  rateLimitWindowMs: 15 * 60 * 1000,
+  rateLimitRequests: 5,
 });
 
 // Adult references use ICMR-NIN RDA 2020. Adolescent references use the

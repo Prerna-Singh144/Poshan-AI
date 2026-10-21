@@ -6,6 +6,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
+import otpRoutes from './routes/otpRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import dietPlanRoutes from './routes/dietPlanRoutes.js';
@@ -86,6 +87,7 @@ app.get('/health', async (_req, res, next) => {
 
 const apiRoutes = [
   ['/auth', authRoutes],
+  ['/auth/otp', otpRoutes],
   ['/reports', reportRoutes],
   ['/mealplans', mealPlanRoutes],
   ['/diet-plans', dietPlanRoutes],

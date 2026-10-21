@@ -29,7 +29,10 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 80 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+    emailVerified: { type: Boolean, default: false },
     passwordHash: { type: String, required: true, select: false },
+    passwordResetTokenHash: { type: String, select: false, index: true },
+    passwordResetTokenExpiresAt: { type: Date, select: false },
     profile: { type: profileSchema, default: undefined },
     onboardingCompleted: { type: Boolean, default: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
