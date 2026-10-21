@@ -102,7 +102,7 @@ export function getApiError(error) {
 export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = client
-      .post('/auth/refresh', null, { _skipAuthRefresh: true })
+      .post('/auth/refresh', undefined, { _skipAuthRefresh: true })
       .then((response) => {
         const payload = payloadFrom(response);
         const session = {

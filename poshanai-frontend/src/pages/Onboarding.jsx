@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button as RetroButton } from 'pixel-retroui';
 import '../components/ui/threeui/threeui.css';
 
-const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx').then((module) => ({ default: module.WarpFieldBackground })));
+const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx'));
 import { getApiError } from '../api/client.js';
 import { submitOnboarding } from '../api/lifestyleApi.js';
 import { Card, useToast } from '../components/common/index.js';

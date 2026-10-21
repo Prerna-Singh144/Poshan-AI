@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-import logo from '../assets/logo.svg';
 import { ReactLenis } from 'lenis/dist/lenis-react.mjs';
 const StickyCards = lazy(() => import('../components/ui/StickyCards.jsx'));
 const KoiStudies = lazy(() => import('../components/ui/KoiStudies.jsx'));
@@ -54,26 +53,6 @@ export default function Landing() {
   return (
     <ReactLenis root options={{ lerp: 0.1, smoothWheel: true }}>
     <main className="landing-page">
-      <header className="landing-header">
-        <Link to="/" className="landing-brand" aria-label="PoshanAI home">
-          <img src={logo} alt="" />
-          <span>poshan<span className="brand-ai">ai</span></span>
-        </Link>
-        <nav className="landing-nav" aria-label="Main navigation">
-          <a href="#approach">Our approach</a>
-          <a href="#benefits">Why PoshanAI</a>
-          <Link to="/food-library">Food library</Link>
-        </nav>
-        <div className="landing-header-actions">
-          <Link className="landing-login" to={isAuthenticated ? '/dashboard' : '/login'}>
-            {isAuthenticated ? 'Dashboard' : 'Log in'}
-          </Link>
-          <Link className="landing-small-cta" to={actionHref}>
-            {isAuthenticated ? 'Open app' : 'Join us'} <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-      </header>
-
       <section className="landing-hero" id="approach">
         <div className="hero-copy">
           <div className="hero-eyebrow"><span /> NUTRITION, MADE PERSONAL</div>
@@ -113,7 +92,7 @@ export default function Landing() {
       </section>
 
       <Suspense fallback={<section className="ingredient-study" aria-label="Nutrition ingredient cards" />}><KoiStudies /></Suspense>
-      <Suspense fallback={<section className="sticky-features" aria-label="PoshanAI features" />}><StickyCards /></Suspense>
+      <Suspense fallback={<section className="bg-[#F9FBF9] px-5 py-16 sm:px-8 lg:px-12" aria-label="PoshanAI features" />}><StickyCards /></Suspense>
       <footer className="landing-footer">
         <Link to="/" className="footer-brand">poshan<span>ai</span></Link>
         <p>Good food is personal. Your wellness journey should be, too.</p>

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, ArrowLeft, Home, Salad, UserRound, Upload, Users, FlaskConical } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../common/Toast.jsx';
 import Footer from './Footer.jsx';
@@ -74,20 +75,15 @@ export function PublicLayout() {
 }
 
 export default function Layout({ children }) {
-  const [dark, setDark] = useState(() => localStorage.getItem('poshanai-theme') === 'dark');
+  const { isDark, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('poshanai-theme', dark ? 'dark' : 'light');
-  }, [dark]);
 
   return (
     <div className="min-h-screen bg-cream text-slate-800 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <AuthenticatedNavbar
-        dark={dark}
-        onToggleTheme={() => setDark((value) => !value)}
+        dark={isDark}
+        onToggleTheme={toggleTheme}
         onToggleMenu={() => setMenuOpen((value) => !value)}
       />
       <div className="mx-auto flex max-w-7xl">
@@ -102,7 +98,7 @@ export default function Layout({ children }) {
                 end={link.to === '/'}
                 onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${isActive ? 'bg-emerald-50 text-leaf dark:bg-emerald-950 dark:text-emerald-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`
+                  `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${isActive ? 'bg-emerald-50 text-leaf dark:bg-emerald-950 dark:text-emerald-300' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}`
                 }
               >
                 <link.Icon size={18} aria-hidden="true" />
