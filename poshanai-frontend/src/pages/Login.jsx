@@ -1,13 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+// Keep RetroUI components scoped to onboarding and authentication flows.
+import { Button as RetroButton, Input as RetroInput } from 'pixel-retroui';
 import logo from '../assets/logo.svg';
-import Button from '../components/common/Button.jsx';
-import SmoothInput from '../components/ui/SmoothInput.jsx';
 import Loader from '../components/common/Loader.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAuth } from '../hooks/useAuth.js';
+import '../components/ui/threeui/threeui.css';
+
+const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx').then((module) => ({ default: module.WarpFieldBackground })));
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
@@ -43,10 +47,13 @@ export default function Login() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-cream p-4 dark:bg-slate-950 sm:p-6">
+    <main className="font-minecraft relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-cream p-4 dark:bg-slate-950 sm:p-6">
+      <div className="auth-warp-background" aria-hidden="true">
+        <Suspense fallback={null}><WarpFieldBackground variant="keycaps" speed={0.45} streakOpacity={0.22} tileOpacity={0.55} fov={75} hue={0} saturation={1.25} brightness={0.8} /></Suspense>
+      </div>
       <section
         aria-labelledby="login-title"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-white/70 bg-white/90 p-6 shadow-xl backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/90 sm:p-8"
       >
         <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="PoshanAI home">
           <img src={logo} alt="" className="h-12 w-12 rounded-xl object-contain" />
@@ -64,21 +71,51 @@ export default function Login() {
           noValidate
           aria-label="Sign in"
         >
-          <SmoothInput
-            label="Email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            {...register('email')}
-            error={errors.email?.message}
-          />
-          <SmoothInput
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            {...register('password')}
-            error={errors.password?.message}
-          />
+          <div className="w-full">
+            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-slate-800 dark:text-slate-100">
+              Email
+            </label>
+            <RetroInput
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? 'login-email-error' : undefined}
+              {...register('email')}
+              bg="#FFFFFF"
+              textColor="#1E5631"
+              borderColor={errors.email ? '#DC2626' : '#000000'}
+              className="w-[calc(100%-0.5rem)]"
+            />
+            {errors.email?.message && (
+              <p id="login-email-error" className="mt-1.5 text-sm text-red-600" role="alert">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+          <div className="w-full">
+            <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-slate-800 dark:text-slate-100">
+              Password
+            </label>
+            <RetroInput
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              aria-invalid={Boolean(errors.password)}
+              aria-describedby={errors.password ? 'login-password-error' : undefined}
+              {...register('password')}
+              bg="#FFFFFF"
+              textColor="#1E5631"
+              borderColor={errors.password ? '#DC2626' : '#000000'}
+              className="w-[calc(100%-0.5rem)]"
+            />
+            {errors.password?.message && (
+              <p id="login-password-error" className="mt-1.5 text-sm text-red-600" role="alert">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
           {errors.root?.serverError?.message && (
             <p
               role="alert"
@@ -87,15 +124,19 @@ export default function Login() {
               {errors.root.serverError.message}
             </p>
           )}
-          <Button
-            className="w-full"
+          <RetroButton
+            bg="#1E5631"
+            textColor="#FFFFFF"
+            borderColor="#000000"
+            shadow="#000000"
+            className="mx-0 my-0 w-full justify-center px-5 py-3 disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"
             disabled={isSubmitting}
             aria-busy={isSubmitting}
           >
             {isSubmitting && <Loader size="sm" label="Signing in" className="border-current" />}
             {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </Button>
+          </RetroButton>
         </form>
         <p className="mt-5 text-sm text-slate-600 dark:text-slate-300">
           Don&apos;t have an account?{' '}

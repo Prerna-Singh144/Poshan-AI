@@ -34,12 +34,8 @@ async function registerUser() {
       password: 'password123',
       consent: true,
     });
-  return {
-    token: response.body.data.accessToken,
-    ip,
-    email,
-    userId: response.body.data.user.id,
-  };
+  const { accessToken: token, user } = response.body.data;
+  return { token, ip, email, userId: user.id };
 }
 
 before(async () => {

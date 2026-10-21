@@ -62,6 +62,7 @@ export default function Landing() {
         <nav className="landing-nav" aria-label="Main navigation">
           <a href="#approach">Our approach</a>
           <a href="#benefits">Why PoshanAI</a>
+          <Link to="/food-library">Food library</Link>
         </nav>
         <div className="landing-header-actions">
           <Link className="landing-login" to={isAuthenticated ? '/dashboard' : '/login'}>

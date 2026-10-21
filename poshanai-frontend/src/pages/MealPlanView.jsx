@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getMealPlan, getMealPlanJobStatus } from '../api/mealPlanApi.js';
 import UplinkLoader from '../components/ui/UplinkLoader.jsx';
+import { ThreeDPaper } from '../components/ui/threeui/ThreeDPaper.jsx';
+import '../components/ui/threeui/threeui.css';
 
 const isJobId = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || '');
 
@@ -12,12 +14,15 @@ function unwrap(value) {
 export default function MealPlanView() {
   const { id } = useParams();
   const [plan, setPlan] = useState(null);
-  const [status, setStatus] = useState(isJobId(id) ? 'queued' : 'loading');
+  const [status, setStatus] = useState(!id ? 'empty' : isJobId(id) ? 'queued' : 'loading');
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
     let timer;
+    if (!id) {
+      return () => { active = false; };
+    }
     async function loadPlan(planId) {
       const response = await getMealPlan(planId);
       if (active) {
@@ -55,10 +60,34 @@ export default function MealPlanView() {
     return () => { active = false; window.clearTimeout(timer); };
   }, [id]);
 
-  if (status !== 'completed') {
+  const viewStatus = id ? status : 'empty';
+
+  if (viewStatus !== 'completed') {
     return (
-      <section className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-        {status === 'failed' ? <div role="alert" className="text-red-700"><h1 className="text-2xl font-bold">Plan unavailable</h1><p className="mt-2">{error}</p><Link className="mt-4 inline-block underline" to="/dashboard">Return to dashboard</Link></div> : <><h1 className="text-3xl font-bold text-slate-900 dark:text-white">Your meal plan</h1><UplinkLoader className="mt-6" label={status === 'loading-plan' ? 'Opening your meal plan…' : 'Generating your personalized meal plan…'} /></>}
+      <section className="mx-auto max-w-5xl">
+        <header className="relative isolate min-h-[360px] overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:p-10">
+          <ThreeDPaper className="meal-plan-paper" variant="original" />
+          <div className="absolute inset-0 z-[1] bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/20" aria-hidden="true" />
+          <div className="relative z-10 flex min-h-[312px] flex-col justify-end">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">PoshanAI · your nutrition guide</p>
+            <h1 className="mt-3 text-3xl font-bold sm:text-4xl">
+              {viewStatus === 'failed' ? 'Plan unavailable' : viewStatus === 'empty' ? 'Your meal plan' : 'Preparing your meal plan'}
+            </h1>
+            {viewStatus === 'failed' ? (
+              <div role="alert" className="mt-3 max-w-2xl text-red-100">
+                <p>{error}</p>
+                <Link className="mt-4 inline-block font-semibold underline" to="/dashboard">Return to dashboard</Link>
+              </div>
+            ) : viewStatus === 'empty' ? (
+              <div className="mt-3 max-w-2xl">
+                <p className="text-sm leading-6 text-white/85">Meal suggestions are educational and do not replace advice from a qualified healthcare professional.</p>
+                <Link className="mt-5 inline-flex rounded-xl bg-[#1E5631] px-5 py-3 font-semibold text-white hover:bg-[#173a2c]" to="/diet-plan">Create a basic diet plan</Link>
+              </div>
+            ) : (
+              <UplinkLoader className="mt-5" label={viewStatus === 'loading-plan' ? 'Opening your meal plan…' : 'Generating your personalized meal plan…'} />
+            )}
+          </div>
+        </header>
       </section>
     );
   }
@@ -66,10 +95,14 @@ export default function MealPlanView() {
   const meals = Array.isArray(plan?.meals) ? plan.meals : [];
   return (
     <section className="mx-auto max-w-5xl space-y-6">
-      <header className="rounded-2xl bg-gradient-to-br from-emerald-50 to-white p-6 dark:from-emerald-950/40 dark:to-slate-900">
-        <p className="text-sm font-semibold uppercase tracking-wider text-leaf">Personalized nutrition</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{plan?.title || 'Your meal plan'}</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{plan?.disclaimer || 'Nutrition suggestions are for awareness and do not replace advice from a qualified healthcare professional.'}</p>
+      <header className="relative isolate min-h-[340px] overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:p-10">
+        <ThreeDPaper className="meal-plan-paper" variant="original" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/20" aria-hidden="true" />
+        <div className="relative z-10 flex min-h-[292px] flex-col justify-end">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">Personalized nutrition</p>
+          <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{plan?.title || 'Your meal plan'}</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-white/85">{plan?.disclaimer || 'Nutrition suggestions are for awareness and do not replace advice from a qualified healthcare professional.'}</p>
+        </div>
       </header>
       <div className="grid gap-4 sm:grid-cols-2">
         {meals.map((meal, index) => (

@@ -56,11 +56,7 @@ export async function runRetentionSweep() {
 
   for (const report of expiredReports) {
     try {
-      try {
-        await deleteFile(report.fileUrl);
-      } catch (fileErr) {
-        throw fileErr;
-      }
+      await deleteFile(report.fileUrl);
 
       await User.updateOne(
         { _id: report.userId },

@@ -1,5 +1,6 @@
 import MealPlan from '../models/MealPlan.js';
-import { getMedicalDisclaimer } from '../services/aiService.js';
+import { env } from '../config/env.js';
+import { generateMealPlan, getMedicalDisclaimer } from '../services/aiService.js';
 import logger from '../utils/logger.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import httpError from '../utils/httpError.js';
@@ -11,6 +12,12 @@ function publicMealPlan(mealPlan) {
 }
 
 export const generate = asyncHandler(async (req, res) => {
+  // Integration tests exercise generation without requiring a Redis queue or worker.
+  if (env.nodeEnv === 'test') {
+    const mealPlan = await generateMealPlan(req.user._id, req.body.reportId, req.body.preferences);
+    return res.status(201).json({ success: true, data: publicMealPlan(mealPlan) });
+  }
+
   try {
     const jobId = await enqueueMealPlanGeneration({
       userId: req.user._id,
