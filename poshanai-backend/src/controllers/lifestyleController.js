@@ -1,4 +1,5 @@
 import LifestyleProfile from '../models/LifestyleProfile.js';
+import User from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import httpError from '../utils/httpError.js';
 import { testRules } from '../services/testRules.js';
@@ -67,6 +68,11 @@ export const saveOnboarding = asyncHandler(async (req, res) => {
     });
   }
   if (!saved) throw httpError(500, 'LIFESTYLE_PROFILE_SAVE_FAILED', 'Lifestyle profile could not be saved.');
+
+  const completion = await User.updateOne({ _id: userId }, { $set: { onboardingCompleted: true } });
+  if (completion.matchedCount !== 1) {
+    throw httpError(404, 'USER_NOT_FOUND', 'User not found.');
+  }
 
   // Use testRules from main branch, fallback to buildRecommendations if needed
   const suggestions = typeof testRules !== 'undefined' ? testRules.rules : buildRecommendations(saved);

@@ -27,6 +27,24 @@ import { getHealthStatus } from './services/healthService.js';
 import { RATE_LIMITS } from './config/constants.js';
 
 const app = express();
+const loopbackHosts = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+
+function isAllowedOrigin(origin) {
+  if (origin === env.clientOrigin) return true;
+  if (env.isProduction || !origin) return false;
+
+  try {
+    const requested = new URL(origin);
+    const configured = new URL(env.clientOrigin);
+    return requested.protocol === configured.protocol
+      && requested.port === configured.port
+      && loopbackHosts.has(requested.hostname)
+      && loopbackHosts.has(configured.hostname);
+  } catch {
+    return false;
+  }
+}
+
 // Trust only the explicitly configured proxy chain. Local direct requests must
 // not be able to choose their rate-limit identity with X-Forwarded-For.
 app.set('trust proxy', env.trustProxyHops);
@@ -47,7 +65,10 @@ const apiLimiter = process.env.NODE_ENV === 'test'
 
 app.disable('x-powered-by');
 app.use(helmet({ frameguard: { action: 'deny' } }));
-app.use(cors({ origin: env.clientOrigin, credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => callback(null, isAllowedOrigin(origin) ? origin : false),
+  credentials: true,
+}));
 app.use(express.json({ limit: '32kb' }));
 app.use(cookieParser());
 app.use(mongoSanitize());

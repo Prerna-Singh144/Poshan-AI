@@ -143,6 +143,19 @@ export function AuthProvider({ children }) {
     }
   }, [setSession]);
 
+  const markOnboardingCompleted = useCallback(() => {
+    if (!user) return;
+    const updatedUser = { ...user, onboardingCompleted: true };
+    setUser(updatedUser);
+    try {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+    } catch {
+      if (import.meta.env.DEV) {
+        console.warn('[auth] Browser storage unavailable; onboarding status will not persist locally.');
+      }
+    }
+  }, [user]);
+
   useEffect(() => {
     const unsubscribe = subscribeAccessToken((token) => {
       setToken(token);
@@ -206,8 +219,9 @@ export function AuthProvider({ children }) {
       register,
       logout,
       refresh,
+      markOnboardingCompleted,
     }),
-    [user, accessToken, isLoading, login, register, logout, refresh],
+    [user, accessToken, isLoading, login, register, logout, refresh, markOnboardingCompleted],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -54,27 +54,31 @@ Set backend variables in `poshanai-backend/.env`. `poshanai-backend/.env.example
 
 Protected endpoints require `Authorization: Bearer <accessToken>` unless noted otherwise.
 
-| Method   | Path                        | Access         | Purpose                                                                              |
-| -------- | --------------------------- | -------------- | ------------------------------------------------------------------------------------ |
-| `GET`    | `/health`                   | Public         | API and dependency health.                                                           |
-| `POST`   | `/api/auth/register`        | Public         | Register an account.                                                                 |
-| `POST`   | `/api/auth/login`           | Public         | Log in and receive an access token plus refresh cookie.                              |
-| `POST`   | `/api/auth/refresh`         | Refresh cookie | Rotate the refresh session and receive a new access token.                           |
-| `POST`   | `/api/auth/logout`          | Refresh cookie | End the current refresh session.                                                     |
+| Method   | Path                        | Access         | Purpose                                                                    |
+| -------- | --------------------------- | -------------- | -------------------------------------------------------------------------- |
+| `GET`    | `/health`                   | Public         | API and dependency health.                                                 |
+| `POST`   | `/api/auth/register`        | Public         | Register an account.                                                       |
+| `POST`   | `/api/auth/login`           | Public         | Log in and receive an access token plus refresh cookie.                    |
+| `POST`   | `/api/auth/refresh`         | Refresh cookie | Rotate the refresh session and receive a new access token.                 |
+| `POST`   | `/api/auth/logout`          | Refresh cookie | End the current refresh session.                                           |
+| `POST`   | `/api/lifestyle/onboarding` | Authenticated  | Save the authenticated user's consent and lifestyle questionnaire.         |
+| `GET`    | `/api/lifestyle/recommendations` | Authenticated | Return reviewed test suggestions for the user's lifestyle profile.       |
 | `GET`    | `/api/calories/maintenance` | Bearer         | Calculate BMR, maintenance calories, and estimated macros from the caller's profile. |
-| `POST`   | `/api/reports/upload`       | Bearer         | Upload a PDF, JPEG, or PNG for OCR. `POST /api/reports` is also supported.           |
-| `GET`    | `/api/reports`              | Bearer         | List the caller's reports.                                                           |
-| `GET`    | `/api/reports/:id`          | Bearer         | Read an owned report and OCR results.                                                |
-| `DELETE` | `/api/reports/:id`          | Bearer         | Delete an owned report and its stored file.                                          |
-| `POST`   | `/api/mealplans/generate`   | Bearer         | Generate a meal plan from an owned, OCR-complete report.                             |
-| `GET`    | `/api/mealplans`            | Bearer         | List the caller's meal plans.                                                        |
-| `GET`    | `/api/mealplans/:id`        | Bearer         | Read an owned meal plan.                                                             |
-| `PATCH`  | `/api/mealplans/:id/status` | Bearer         | Set an owned plan to `active` or `completed`.                                        |
-| `POST`   | `/api/logs/add-food`        | Bearer         | Add an IFCT food portion to today's log.                                             |
-| `GET`    | `/api/logs/today`           | Bearer         | Read today's food entries, nutrient totals, and calorie target comparison.           |
-| `DELETE` | `/api/logs/:logId`          | Bearer         | Remove one owned food entry by its embedded entry ID.                                |
+| `POST`   | `/api/reports/upload`       | Bearer         | Upload a PDF, JPEG, or PNG for OCR. `POST /api/reports` is also supported. |
+| `GET`    | `/api/reports`              | Bearer         | List the caller's reports.                                                 |
+| `GET`    | `/api/reports/:id`          | Bearer         | Read an owned report and OCR results.                                      |
+| `DELETE` | `/api/reports/:id`          | Bearer         | Delete an owned report and its stored file.                                |
+| `POST`   | `/api/mealplans/generate`   | Bearer         | Generate a meal plan from an owned, OCR-complete report.                   |
+| `GET`    | `/api/mealplans`            | Bearer         | List the caller's meal plans.                                              |
+| `GET`    | `/api/mealplans/:id`        | Bearer         | Read an owned meal plan.                                                   |
+| `PATCH`  | `/api/mealplans/:id/status` | Bearer         | Set an owned plan to `active` or `completed`.                              |
+| `POST`   | `/api/logs/add-food`        | Bearer         | Add an IFCT food portion to today's log.                                   |
+| `GET`    | `/api/logs/today`           | Bearer         | Read today's food entries, nutrient totals, and calorie target comparison. |
+| `DELETE` | `/api/logs/:logId`          | Bearer         | Remove one owned food entry by its embedded entry ID.                      |
 
 `GET /api/calories/maintenance` requires `age`, `gender` (`male` or `female`), `weightKg`, `heightCm`, and `activityLevel` in the authenticated user's profile. `targetCalories` is the maintenance estimate (TDEE). Macro estimates use a 20% protein, 50% carbohydrate, and 30% fat energy split, converted using 4/4/9 kcal per gram.
+
+New accounts must complete the consent and lifestyle questionnaire before accessing the dashboard. The recommendations endpoint returns only entries configured in `poshanai-backend/data/testRules.json`; that file currently contains no reviewed suggestions, so users may see an empty result. Do not add clinical test rules without appropriate review.
 
 `POST /api/logs/add-food` accepts `mealType`, `ifctCode`, and `quantityGrams`; macros are scaled from the IFCT per-100-g values. `GET /api/logs/today` returns the UTC date, food entries, nutrient totals, and a `calorieComparison` with consumed, target, and remaining calories. The target is `null` until the user profile has the fields required by the calorie calculator. `DELETE /api/logs/:logId` takes the food entry's embedded `_id` returned by the add-food endpoint.
 
@@ -86,7 +90,7 @@ For local Compose TLS, place a self-signed certificate and key at those same pat
 
 ## Current implementation
 
-The frontend is a responsive landing page. The Express API connects to MongoDB and includes health endpoints, Helmet, restricted CORS, request-size limits, Mongo operator sanitization, API rate limiting, JWT authentication, and ownership-checked report and meal-plan endpoints. Report OCR uses Tesseract.js, with an optional Redis-backed queue and synchronous fallback. Meal plans retrieve foods from `poshanai-backend/data/ifct_2017.json` and use an OpenAI-compatible OmniRoute gateway configured with `OMNIROUTE_URL`, `OMNIROUTE_MODEL`, and optional `OMNIROUTE_API_KEY`. Nutrient amounts shown in a plan are calculated from the selected records and serving weights. The `ai-service` directories remain extension points.
+The frontend includes a responsive landing page, authenticated dashboard, and consent-first lifestyle onboarding wizard with recommendations. The Express API connects to MongoDB and includes health endpoints, Helmet, restricted CORS, request-size limits, Mongo operator sanitization, API rate limiting, JWT authentication, and ownership-checked report and meal-plan endpoints. Report OCR uses Tesseract.js, with an optional Redis-backed queue and synchronous fallback. Meal plans retrieve foods from `poshanai-backend/data/ifct_2017.json` and use an OpenAI-compatible OmniRoute gateway configured with `OMNIROUTE_URL`, `OMNIROUTE_MODEL`, and optional `OMNIROUTE_API_KEY`. Nutrient amounts shown in a plan are calculated from the selected records and serving weights. The `ai-service` directories remain extension points.
 
 PoshanAI is intended for nutrition awareness and food suggestions. It must not diagnose or replace advice from a qualified healthcare professional.
 

@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Button, Card } from '../common/index.js';
 import TestIcon from './TestIcon.jsx';
 
@@ -18,14 +19,22 @@ export default function TestCard({ test, index, onWhyThis }) {
             <p className="mt-1 line-clamp-3 text-sm text-slate-600 dark:text-slate-300">{test.reason}</p>
           </div>
         </div>
-        <Button
-          variant="secondary"
-          className="w-full sm:w-auto"
-          onClick={() => onWhyThis(test)}
-          aria-label={`Why ${test.testName}?`}
-        >
-          Why this?
-        </Button>
+        <div className="flex flex-col gap-2 sm:shrink-0">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => onWhyThis(test)}
+            aria-label={`Why ${test.testName}?`}
+          >
+            Why this?
+          </Button>
+          <Link
+            to="/upload"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf focus-visible:ring-offset-2 dark:border-slate-600 dark:text-white dark:hover:bg-slate-800"
+          >
+            Upload this report later
+          </Link>
+        </div>
       </Card>
     </motion.li>
   );
