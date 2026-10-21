@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Button as RetroButton, Input as RetroInput } from 'pixel-retroui';
 
 const legendClass = 'mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100';
 const focusRing =
@@ -79,17 +80,55 @@ export function ChipGroup({ legend, hint, options, selected, onToggle, error }) 
 }
 
 export function Stepper({ legend, value, min, max, onChange, unit }) {
-  const buttonClass =
-    'flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 text-xl font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf disabled:opacity-40 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800';
   return (
     <div role="group" aria-label={legend}>
       <p className={legendClass}>{legend}</p>
       <div className="flex items-center gap-4">
-        <button type="button" className={buttonClass} aria-label={`Decrease ${legend}`} disabled={value <= min} onClick={() => onChange(value - 1)}>−</button>
-        <output className="min-w-[4.5rem] text-center text-lg font-bold tabular-nums text-slate-900 dark:text-white">
-          {value} <span className="text-sm font-medium text-slate-500">{unit}</span>
-        </output>
-        <button type="button" className={buttonClass} aria-label={`Increase ${legend}`} disabled={value >= max} onClick={() => onChange(value + 1)}>+</button>
+        <RetroButton
+          type="button"
+          bg="#1E5631"
+          textColor="#FFFFFF"
+          borderColor="#000000"
+          shadow="#000000"
+          className="mx-0 my-0 h-11 w-11 px-2 py-1 text-xl disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label={`Decrease ${legend}`}
+          disabled={value <= min}
+          onClick={() => onChange(value - 1)}
+        >
+          −
+        </RetroButton>
+        <div className="flex min-w-32 items-center gap-2">
+          <RetroInput
+            aria-label={legend}
+            type="number"
+            min={min}
+            max={max}
+            step={1}
+            value={value}
+            onChange={(event) => {
+              const nextValue = Number(event.target.value);
+              if (Number.isFinite(nextValue)) onChange(Math.min(max, Math.max(min, nextValue)));
+            }}
+            bg="#FFFFFF"
+            textColor="#1E5631"
+            borderColor="#000000"
+            className="w-20"
+          />
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{unit}</span>
+        </div>
+        <RetroButton
+          type="button"
+          bg="#1E5631"
+          textColor="#FFFFFF"
+          borderColor="#000000"
+          shadow="#000000"
+          className="mx-0 my-0 h-11 w-11 px-2 py-1 text-xl disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label={`Increase ${legend}`}
+          disabled={value >= max}
+          onClick={() => onChange(value + 1)}
+        >
+          +
+        </RetroButton>
       </div>
     </div>
   );

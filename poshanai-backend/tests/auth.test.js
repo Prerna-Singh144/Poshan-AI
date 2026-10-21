@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test, { describe, it, before, after, beforeEach } from 'node:test';
+import { describe, it, before, after, beforeEach } from 'node:test';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';

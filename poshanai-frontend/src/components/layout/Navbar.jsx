@@ -23,6 +23,7 @@ export default function Navbar() {
           <span className="font-heading text-lg font-bold tracking-tight text-leaf">Poshan<span className="text-orange">AI</span></span>
         </Link>
         <nav className="flex items-center gap-1" aria-label="Main navigation">
+          <NavLink to="/food-library" className={linkClass}>Food library</NavLink>
           <button type="button" onClick={() => setIsDark((value) => !value)} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf dark:text-slate-300 dark:hover:bg-slate-800" aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}>
             {isDark ? '☀️' : '🌙'}<span className="sr-only">{isDark ? 'Light' : 'Dark'} theme</span>
           </button>

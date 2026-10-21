@@ -41,7 +41,7 @@ jobs:
           key: frontend-modules-${{ runner.os }}-${{ hashFiles('poshanai-frontend/package-lock.json') }}
 
       - name: Cache backend node_modules
-        if: matrix.check == 'test'
+        if: matrix.check == 'test' || matrix.check == 'lint'
         id: backend-cache
         uses: actions/cache@v4
         with:
@@ -53,12 +53,16 @@ jobs:
         run: npm ci --prefix poshanai-frontend
 
       - name: Install backend dependencies
-        if: matrix.check == 'test' && steps.backend-cache.outputs.cache-hit != 'true'
+        if: (matrix.check == 'test' || matrix.check == 'lint') && steps.backend-cache.outputs.cache-hit != 'true'
         run: npm ci --prefix poshanai-backend
 
       - name: Run ESLint
         if: matrix.check == 'lint'
         run: npm run lint --prefix poshanai-frontend
+
+      - name: Run backend ESLint
+        if: matrix.check == 'lint'
+        run: npm run lint --prefix poshanai-backend
 
       - name: Check formatting
         if: matrix.check == 'lint'
