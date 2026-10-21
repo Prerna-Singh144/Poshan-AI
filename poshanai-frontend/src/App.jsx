@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import OtpLogin from './pages/OtpLogin.jsx';
+import TwoFactorVerify from './pages/TwoFactorVerify.jsx';
 import Register from './pages/Register.jsx';
 import Profile from './pages/Profile.jsx';
 import UploadReport from './pages/UploadReport.jsx';
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/login-otp" element={<OtpLogin />} />
+            <Route path="/two-factor-verify" element={<TwoFactorVerify />} />
             <Route path="/register" element={<Register />} />
             <Route path="/food-library" element={<Suspense fallback={<RouteLoading />}><FoodLibrary /></Suspense>} />
           </Route>

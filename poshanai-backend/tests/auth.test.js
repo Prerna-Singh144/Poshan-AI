@@ -4,6 +4,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import jwt from 'jsonwebtoken';
+import speakeasy from 'speakeasy';
 import app from '../src/app.js';
 import User from '../src/models/User.js';
 import { env } from '../src/config/env.js';
@@ -21,7 +22,7 @@ function assertRefreshCookie(res) {
   assert.ok(cookie, 'refresh cookie should be present');
   assert.match(cookie, /;\s*Path=\//i);
   assert.match(cookie, /;\s*HttpOnly(?:;|$)/i);
-  assert.match(cookie, /;\s*SameSite=Lax(?:;|$)/i);
+  assert.match(cookie, /;\s*SameSite=Strict(?:;|$)/i);
 }
 
 before(async () => {
@@ -347,7 +348,7 @@ describe('Authentication API (/api/auth)', () => {
         .send({ email: 'grace@example.com', password: 'password123' });
 
       let user = await User.findOne({ email: 'grace@example.com' }).select('+refreshTokens');
-      assert.equal(user.refreshTokens.length, 2);
+      assert.equal(user.refreshTokens.length, 1);
 
       const res = await request(app)
         .post('/api/auth/logout-all')
@@ -360,5 +361,232 @@ describe('Authentication API (/api/auth)', () => {
       user = await User.findOne({ email: 'grace@example.com' }).select('+refreshTokens');
       assert.equal(user.refreshTokens.length, 0);
     });
+  });
+});
+
+describe('Two-factor authentication API (/api/auth/2fa)', () => {
+  async function registerAndEnableTwoFactor(email) {
+    const ip = nextIp();
+    const registration = await request(app)
+      .post('/api/auth/register')
+      .set('X-Forwarded-For', ip)
+      .send({ name: 'Two Factor User', email, password: 'password123', consent: true });
+    assert.equal(registration.status, 201);
+
+    const setup = await request(app)
+      .post('/api/auth/2fa/setup')
+      .set('X-Forwarded-For', ip)
+      .set('Authorization', `Bearer ${registration.body.data.accessToken}`)
+      .send({});
+    assert.equal(setup.status, 200);
+    assert.match(setup.body.data.qrCode, /^data:image\/png;base64,/);
+    assert.equal(typeof setup.body.data.secret, 'string');
+
+    const setupCode = speakeasy.totp({
+      secret: setup.body.data.secret,
+      encoding: 'base32',
+      time: Math.floor(Date.now() / 30_000) * 30 - 30,
+    });
+    const enabled = await request(app)
+      .post('/api/auth/2fa/verify-setup')
+      .set('X-Forwarded-For', ip)
+      .set('Authorization', `Bearer ${registration.body.data.accessToken}`)
+      .send({ secret: setup.body.data.secret, code: setupCode, ignored: 'stripped' });
+    assert.equal(enabled.status, 200, JSON.stringify(enabled.body));
+    assert.equal(enabled.body.data.twoFactorEnabled, true);
+    assert.equal(enabled.body.data.backupCodes.length, 10);
+    assert.ok(enabled.body.data.backupCodes.every((code) => /^[A-F0-9]{10}$/.test(code)));
+    return { ip, token: registration.body.data.accessToken, secret: setup.body.data.secret, backupCodes: enabled.body.data.backupCodes };
+  }
+
+  it('encrypts the TOTP secret, requires a short-lived challenge, and rejects its replay', async () => {
+    const { ip, token, secret } = await registerAndEnableTwoFactor('totp@example.com');
+    const stored = await User.collection.findOne({ email: 'totp@example.com' });
+    assert.equal(stored.twoFactorSecret, undefined);
+    assert.ok(stored._ct, 'mongoose-encryption stores encrypted data in ciphertext');
+    assert.ok(stored.twoFactorBackupCodes.every((hash) => /^\$2[aby]\$12\$/.test(hash)));
+    const decrypted = await User.findById(stored._id).select('+twoFactorSecret +twoFactorBackupCodes');
+    assert.equal(decrypted.twoFactorSecret, secret);
+
+    const profileUpdate = await request(app)
+      .patch('/api/users/me')
+      .set('X-Forwarded-For', ip)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Updated Two Factor User' });
+    assert.equal(profileUpdate.status, 200);
+    assert.equal(profileUpdate.body.data.twoFactorEnabled, true);
+    assert.equal(profileUpdate.body.data.twoFactorSecret, undefined);
+    const afterProfileUpdate = await User.findById(stored._id).select('+twoFactorSecret');
+    assert.equal(afterProfileUpdate.twoFactorSecret, secret);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'totp@example.com', password: 'password123' });
+    assert.equal(login.status, 200);
+    assert.equal(login.body.requiresTwoFactor, true);
+    assert.equal(login.body.accessToken, undefined);
+    const pending = jwt.decode(login.body.tempToken);
+    assert.equal(pending.scope, '2fa_pending');
+    assert.equal(pending.type, '2fa_temp');
+    assert.equal(Number.isInteger(pending.tokenVersion), true);
+    assert.ok(pending.exp - pending.iat <= 300);
+
+    const stepSkip = await request(app)
+      .get('/api/users/me')
+      .set('X-Forwarded-For', ip)
+      .set('Authorization', `Bearer ${login.body.tempToken}`);
+    assert.equal(stepSkip.status, 401);
+    assert.equal(stepSkip.body.error.message, '2FA Verification Required');
+
+    const code = speakeasy.totp({ secret, encoding: 'base32' });
+    const verified = await request(app)
+      .post('/api/auth/2fa/verify-login')
+      .set('X-Forwarded-For', ip)
+      .send({ tempToken: login.body.tempToken, code });
+    assert.equal(verified.status, 200);
+    assert.ok(verified.body.data.accessToken);
+    const access = jwt.decode(verified.body.data.accessToken);
+    assert.equal(access.scope, 'full_access');
+    assert.equal(access.type, 'access');
+    assert.ok(access.tokenVersion > pending.tokenVersion);
+    assertRefreshCookie(verified);
+
+    const replay = await request(app)
+      .post('/api/auth/2fa/verify-login')
+      .set('X-Forwarded-For', ip)
+      .send({ tempToken: login.body.tempToken, code });
+    assert.equal(replay.status, 401);
+    assert.equal(replay.body.error.code, 'TWO_FACTOR_CHALLENGE_INVALID');
+  });
+
+  it('allows each backup code once and removes it after login', async () => {
+    const { ip, backupCodes } = await registerAndEnableTwoFactor('backup@example.com');
+    const login = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'backup@example.com', password: 'password123' });
+    const verified = await request(app)
+      .post('/api/auth/2fa/verify-login')
+      .set('X-Forwarded-For', ip)
+      .send({ tempToken: login.body.tempToken, code: backupCodes[0] });
+    assert.equal(verified.status, 200);
+
+    const user = await User.findOne({ email: 'backup@example.com' }).select('+twoFactorBackupCodes');
+    assert.equal(user.twoFactorBackupCodes.length, 9);
+
+    const secondLogin = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'backup@example.com', password: 'password123' });
+    const reused = await request(app)
+      .post('/api/auth/2fa/verify-login')
+      .set('X-Forwarded-For', ip)
+      .send({ tempToken: secondLogin.body.tempToken, code: backupCodes[0] });
+    assert.equal(reused.status, 400);
+    assert.equal(reused.body.error.code, 'INVALID_OTP');
+  });
+
+  it('requires a fresh TOTP and password to disable two-factor authentication', async () => {
+    const { ip, token, secret } = await registerAndEnableTwoFactor('disable@example.com');
+    const code = speakeasy.totp({ secret, encoding: 'base32' });
+    const disabled = await request(app)
+      .post('/api/auth/2fa/disable')
+      .set('X-Forwarded-For', ip)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ password: 'password123', code });
+    assert.equal(disabled.status, 200);
+    assert.equal(disabled.body.data.user.twoFactorEnabled, false);
+
+    const user = await User.findOne({ email: 'disable@example.com' }).select('+twoFactorSecret +twoFactorBackupCodes');
+    assert.equal(user.twoFactorSecret, undefined);
+    assert.equal(user.twoFactorBackupCodes.length, 0);
+  });
+
+  it('rejects unauthenticated setup and invalid verification input', async () => {
+    const setup = await request(app).post('/api/auth/2fa/setup').send({});
+    assert.equal(setup.status, 401);
+    const invalid = await request(app).post('/api/auth/2fa/verify-login').send({ tempToken: 'invalid', code: 'abc' });
+    assert.equal(invalid.status, 400);
+    assert.equal(invalid.body.error.code, 'VALIDATION_ERROR');
+  });
+
+  it('invalidates the temporary token after three wrong codes and rate limits the fourth attempt', async () => {
+    await registerAndEnableTwoFactor('lockout@example.com');
+    const ip = nextIp();
+    const login = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'lockout@example.com', password: 'password123' });
+    assert.equal(login.status, 200);
+    const tempToken = login.body.tempToken;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const failed = await request(app)
+        .post('/api/auth/2fa/verify-login')
+        .set('X-Forwarded-For', ip)
+        .send({ tempToken, code: '000000' });
+      assert.equal(failed.status, 400, JSON.stringify(failed.body));
+      assert.equal(failed.body.error.code, 'INVALID_OTP');
+    }
+
+    const limited = await request(app)
+      .post('/api/auth/2fa/verify-login')
+      .set('X-Forwarded-For', ip)
+      .send({ tempToken, code: '000000' });
+    assert.equal(limited.status, 429);
+    assert.equal(limited.body.error.code, 'TWO_FACTOR_RATE_LIMITED');
+
+    const stored = await User.findOne({ email: 'lockout@example.com' }).select('+twoFactorLockUntil +twoFactorChallengeHash');
+    assert.ok(stored.twoFactorLockUntil instanceof Date);
+    assert.equal(stored.twoFactorChallengeHash, undefined);
+  });
+
+  it('enforces the account attempt limit even when requests come from different IPs', async () => {
+    await registerAndEnableTwoFactor('account-limit@example.com');
+    const login = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', nextIp())
+      .send({ email: 'account-limit@example.com', password: 'password123' });
+    const tempToken = login.body.tempToken;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const failed = await request(app)
+        .post('/api/auth/2fa/verify-login')
+        .set('X-Forwarded-For', nextIp())
+        .send({ tempToken, code: '000000' });
+      assert.equal(failed.status, 400);
+    }
+
+    const limited = await request(app)
+      .post('/api/auth/2fa/verify-login')
+      .set('X-Forwarded-For', nextIp())
+      .send({ tempToken, code: '000000' });
+    assert.equal(limited.status, 429);
+  });
+
+  it('requires TOTP after passwordless Email OTP login for accounts with TOTP enabled', async () => {
+    await registerAndEnableTwoFactor('email-totp@example.com');
+    const emailCode = await request(app)
+      .post('/api/v1/auth/otp/request')
+      .set('X-Forwarded-For', nextIp())
+      .send({ email: 'email-totp@example.com', purpose: 'login' });
+    assert.equal(emailCode.status, 200);
+
+    const verifiedEmail = await request(app)
+      .post('/api/v1/auth/otp/verify')
+      .set('X-Forwarded-For', nextIp())
+      .send({ email: 'email-totp@example.com', purpose: 'login', otp: emailCode.body.data.dev_otp });
+    assert.equal(verifiedEmail.status, 200);
+    assert.equal(verifiedEmail.body.requiresTwoFactor, true);
+    assert.equal(verifiedEmail.body.accessToken, undefined);
+    assert.equal(jwt.decode(verifiedEmail.body.tempToken).scope, '2fa_pending');
+
+    const bypass = await request(app)
+      .get('/api/users/me')
+      .set('X-Forwarded-For', nextIp())
+      .set('Authorization', `Bearer ${verifiedEmail.body.tempToken}`);
+    assert.equal(bypass.status, 401);
+    assert.equal(bypass.body.error.message, '2FA Verification Required');
   });
 });

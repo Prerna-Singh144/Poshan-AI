@@ -7,7 +7,15 @@ function readSession(response) {
 }
 
 export async function login(credentials) {
-  return readSession(await client.post('/auth/login', credentials));
+  const payload = payloadFrom(await client.post('/auth/login', credentials));
+  if (payload?.requiresTwoFactor) {
+    return {
+      requiresTwoFactor: true,
+      tempToken: payload.tempToken,
+      expiresIn: payload.expiresIn ?? 300,
+    };
+  }
+  return readSession({ data: payload });
 }
 
 export async function requestOTP(email, purpose) {
@@ -22,6 +30,22 @@ export async function resetPassword(resetToken, password) {
   return payloadFrom(await client.post('/auth/otp/reset-password', { resetToken, password }));
 }
 
+export async function verifyTwoFactor(tempToken, code) {
+  return readSession(await client.post('/auth/2fa/verify-login', { tempToken, code }));
+}
+
+export async function setupTwoFactor() {
+  return payloadFrom(await client.post('/auth/2fa/setup', {}));
+}
+
+export async function verifyTwoFactorSetup(secret, code) {
+  return payloadFrom(await client.post('/auth/2fa/verify-setup', { secret, code }));
+}
+
+export async function disableTwoFactor(password, code) {
+  return payloadFrom(await client.post('/auth/2fa/disable', { password, code }));
+}
+
 export async function register(details) {
   return readSession(await client.post('/auth/register', details));
 }
@@ -34,5 +58,16 @@ export async function logout() {
   }
 }
 
-const authApi = { login, register, logout, requestOTP, verifyOTP, resetPassword };
+const authApi = {
+  login,
+  register,
+  logout,
+  requestOTP,
+  verifyOTP,
+  resetPassword,
+  verifyTwoFactor,
+  setupTwoFactor,
+  verifyTwoFactorSetup,
+  disableTwoFactor,
+};
 export default authApi;

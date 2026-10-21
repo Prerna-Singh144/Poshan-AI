@@ -68,7 +68,11 @@ export default function OtpLogin() {
     setIsSubmitting(true);
     try {
       if (purpose === 'login') {
-        await loginWithOtp(email.trim(), otp);
+        const result = await loginWithOtp(email.trim(), otp);
+        if (result?.requiresTwoFactor) {
+          navigate('/two-factor-verify', { replace: true });
+          return;
+        }
         navigate('/dashboard', { replace: true });
         return;
       }

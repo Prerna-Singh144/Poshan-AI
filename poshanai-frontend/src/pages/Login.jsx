@@ -30,7 +30,11 @@ export default function Login() {
   const onSubmit = async (credentials) => {
     clearErrors('root.serverError');
     try {
-      await login(credentials);
+      const result = await login(credentials);
+      if (result?.requiresTwoFactor) {
+        navigate('/two-factor-verify', { replace: true });
+        return;
+      }
       navigate('/dashboard', { replace: true });
     } catch (error) {
       const message =
