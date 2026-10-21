@@ -24,16 +24,18 @@ const validOnboarding = {
 
 async function registerUser() {
   const ip = `10.0.3.${ipCounter++}`;
+  const email = `lifestyle-${ipCounter}@example.com`;
   const response = await request(app)
     .post('/api/auth/register')
     .set('X-Forwarded-For', ip)
     .send({
       name: 'Lifestyle Tester',
-      email: `lifestyle-${ipCounter}@example.com`,
+      email,
       password: 'password123',
       consent: true,
     });
-  return { token: response.body.data.accessToken, ip };
+  const { accessToken: token, user } = response.body.data;
+  return { token, ip, email, userId: user.id };
 }
 
 before(async () => {
