@@ -13,6 +13,7 @@ function userPayload(user) {
     name: user.name,
     email: user.email,
     profile: user.profile,
+    onboardingCompleted: Boolean(user.onboardingCompleted),
     role: user.role,
     consent: user.consent,
     status: user.status,

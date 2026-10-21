@@ -52,6 +52,7 @@ describe('Authentication API (/api/auth)', () => {
       assert.ok(res.body.data.accessToken);
       assert.equal(res.body.data.user.email, 'alice@example.com');
       assert.equal(res.body.data.user.name, 'Alice Smith');
+      assert.equal(res.body.data.user.onboardingCompleted, false);
 
       assertRefreshCookie(res);
     });

@@ -23,17 +23,23 @@ const validOnboarding = {
 };
 
 async function registerUser() {
+  const email = `lifestyle-${ipCounter}@example.com`;
   const ip = `10.0.3.${ipCounter++}`;
   const response = await request(app)
     .post('/api/auth/register')
     .set('X-Forwarded-For', ip)
     .send({
       name: 'Lifestyle Tester',
-      email: `lifestyle-${ipCounter}@example.com`,
+      email,
       password: 'password123',
       consent: true,
     });
-  return { token: response.body.data.accessToken, ip };
+  return {
+    token: response.body.data.accessToken,
+    ip,
+    email,
+    userId: response.body.data.user.id,
+  };
 }
 
 before(async () => {
@@ -56,7 +62,8 @@ test('requires a valid access token for lifestyle onboarding', async () => {
 });
 
 test('overwrites the authenticated user profile on repeat submissions without duplicates or data leaks', async () => {
-  const { token, ip } = await registerUser();
+  const { token, ip, email, userId } = await registerUser();
+  assert.equal((await User.findById(userId)).onboardingCompleted, false);
   const first = await request(app)
     .post('/api/lifestyle/onboarding')
     .set('Authorization', `Bearer ${token}`)
@@ -74,6 +81,13 @@ test('overwrites the authenticated user profile on repeat submissions without du
   assert.deepEqual(second.body.data.profile.age, 31);
   assert.equal(second.body.data.profile.dietType, 'vegan');
   assert.equal(second.body.data.profile.consent, true);
+  assert.equal((await User.findById(userId)).onboardingCompleted, true);
+  const login = await request(app)
+    .post('/api/auth/login')
+    .set('X-Forwarded-For', ip)
+    .send({ email, password: 'password123' });
+  assert.equal(login.status, 200);
+  assert.equal(login.body.data.user.onboardingCompleted, true);
   assert.equal(Object.hasOwn(second.body.data.profile, 'gender'), false);
   assert.equal(Object.hasOwn(second.body.data.profile, 'userId'), false);
   assert.equal(Object.hasOwn(second.body.data.profile, 'email'), false);

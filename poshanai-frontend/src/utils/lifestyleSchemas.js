@@ -22,8 +22,10 @@ export const INITIAL_LIFESTYLE_VALUES = {
   consent: false,
 };
 
-// One schema per wizard step, so each step validates before moving on.
 export const stepSchemas = [
+  z.object({
+    consent: z.literal(true, { errorMap: () => ({ message: 'Please agree to continue.' }) }),
+  }),
   z.object({
     dietType: choice(DIET_OPTIONS, 'Please choose your diet type.'),
     mealsPerDay: z.number().int().min(1).max(10),
@@ -33,15 +35,24 @@ export const stepSchemas = [
     sleepHours: z.number().min(1).max(16),
     sleepTime: choice(SLEEP_TIME_OPTIONS, 'Please choose when you usually sleep.'),
     sunExposure: choice(SUN_OPTIONS, 'Please choose how much sunlight you get.'),
-  }),
-  z.object({
     activityLevel: choice(ACTIVITY_OPTIONS, 'Please choose your activity level.'),
-    habits: multi(HABIT_OPTIONS, 'Select at least one option, or "None of these".'),
   }),
   z.object({
     symptoms: multi(SYMPTOM_OPTIONS, 'Select at least one option, or "None of these".'),
-    consent: z.literal(true, { errorMap: () => ({ message: 'Please agree to continue.' }) }),
+    habits: multi(HABIT_OPTIONS, 'Select at least one option, or "None of these".'),
   }),
+];
+
+export const onboardingSchema = stepSchemas.reduce(
+  (schema, stepSchema) => schema.merge(stepSchema),
+  z.object({}),
+);
+
+export const STEP_FIELDS = [
+  ['consent'],
+  ['dietType', 'mealsPerDay', 'typicalDiet'],
+  ['sleepHours', 'sleepTime', 'sunExposure', 'activityLevel'],
+  ['symptoms', 'habits'],
 ];
 
 /** @returns {{ ok: boolean, errors: Record<string, string> }} */

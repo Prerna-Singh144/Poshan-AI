@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     passwordHash: { type: String, required: true, select: false },
     profile: { type: profileSchema, default: undefined },
+    onboardingCompleted: { type: Boolean, default: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
     refreshTokens: { type: [refreshTokenSchema], default: [], select: false },
     uploadCount: { type: Number, default: 0, min: 0 },

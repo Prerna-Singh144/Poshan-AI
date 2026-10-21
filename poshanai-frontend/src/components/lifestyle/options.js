@@ -42,4 +42,4 @@ export const SYMPTOM_OPTIONS = [
   { value: 'none', label: 'None of these' },
 ];
 
-export const STEP_TITLES = ['Your diet', 'Sleep & sunlight', 'Activity & habits', 'How you feel'];
+export const STEP_TITLES = ['Consent (DPDP Act)', 'Your diet', 'Your lifestyle', 'Symptoms & habits'];
