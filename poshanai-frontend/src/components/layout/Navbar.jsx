@@ -17,8 +17,8 @@ export default function Navbar() {
   const closeMenu = () => setMenuOpen(false);
   const homeLinks = (
     <>
-      <Link to={isLanding ? '#approach' : '/#approach'} onClick={closeMenu} className={linkClass({ isActive: true })}>Our approach</Link>
-      <Link to={isLanding ? '#benefits' : '/#benefits'} onClick={closeMenu} className={linkClass({ isActive: true })}>Why PoshanAI</Link>
+      <Link to={isLanding ? '#approach' : '/#approach'} onClick={closeMenu} className={linkClass({ isActive: false })}>Our approach</Link>
+      <Link to={isLanding ? '#benefits' : '/#benefits'} onClick={closeMenu} className={linkClass({ isActive: false })}>Why PoshanAI</Link>
     </>
   );
   const themeButton = (
