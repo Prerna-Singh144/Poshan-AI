@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button as RetroButton } from 'pixel-retroui';
 import '../components/ui/threeui/threeui.css';
 
+// Correct import based on main branch
 const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx').then((module) => ({ default: module.WarpFieldBackground })));
 
 import { getApiError } from '../api/client.js';

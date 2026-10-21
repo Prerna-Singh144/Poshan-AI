@@ -3,14 +3,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-// Keep RetroUI components scoped to onboarding and authentication flows.
-import { Button as RetroButton, Input as RetroInput } from 'pixel-retroui';
-import logo from '../assets/logo.svg';
+import Button from '../components/common/Button.jsx';
 import Loader from '../components/common/Loader.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAuth } from '../hooks/useAuth.js';
-import '../components/ui/threeui/threeui.css';
 
+import '../components/ui/threeui/threeui.css';
 const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx'));
 
 const loginSchema = z.object({
@@ -47,35 +45,37 @@ export default function Login() {
   };
 
   return (
-    <main className="font-minecraft relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-cream p-4 dark:bg-slate-950 sm:p-6">
-      <div className="auth-warp-background" aria-hidden="true">
-        <Suspense fallback={null}><WarpFieldBackground variant="keycaps" speed={0.45} streakOpacity={0.22} tileOpacity={0.55} fov={75} hue={0} saturation={1.25} brightness={0.8} /></Suspense>
-      </div>
+    <main className="flex min-h-[70vh] items-center justify-center bg-[#f8f7f1] px-5 py-14 text-[#27362d] dark:bg-slate-950 dark:text-slate-100 sm:px-8 sm:py-20">
       <section
         aria-labelledby="login-title"
-        className="relative z-10 w-full max-w-md rounded-2xl border border-white/70 bg-white/90 p-6 shadow-xl backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/90 sm:p-8"
+        className="w-full max-w-md rounded-xl border border-[#e6e4d9] bg-[#fffefa] p-6 shadow-[0_20px_60px_rgba(39,54,45,0.08)] dark:border-slate-700 dark:bg-slate-900 sm:p-9"
       >
-        <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="PoshanAI home">
-          <img src={logo} alt="" className="h-12 w-12 rounded-xl object-contain" />
-          <span className="text-xl font-bold text-leaf dark:text-emerald-300">PoshanAI</span>
-        </Link>
-        <h1 id="login-title" className="text-3xl font-bold text-slate-900 dark:text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#728f5b] dark:text-emerald-300">
+          Nutrition, made personal
+        </p>
+        <h1
+          id="login-title"
+          className="mt-3 font-serif text-3xl font-semibold tracking-tight text-[#244b36] dark:text-white sm:text-4xl"
+        >
           Sign in
         </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-sm leading-6 text-[#58655a] dark:text-slate-300">
           Sign in to continue to PoshanAI.
         </p>
         <form
-          className="mt-6 space-y-4"
+          className="mt-7 space-y-5"
           onSubmit={handleSubmit(onSubmit)}
           noValidate
           aria-label="Sign in"
         >
           <div className="w-full">
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-slate-800 dark:text-slate-100">
+            <label
+              htmlFor="login-email"
+              className="mb-1.5 block text-sm font-medium text-[#27362d] dark:text-slate-100"
+            >
               Email
             </label>
-            <RetroInput
+            <input
               id="login-email"
               type="email"
               autoComplete="email"
@@ -83,10 +83,7 @@ export default function Login() {
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'login-email-error' : undefined}
               {...register('email')}
-              bg="#FFFFFF"
-              textColor="#1E5631"
-              borderColor={errors.email ? '#DC2626' : '#000000'}
-              className="w-[calc(100%-0.5rem)]"
+              className={`w-full rounded-md border bg-white px-3.5 py-3 text-[#27362d] outline-none transition placeholder:text-slate-400 focus:border-[#244b36] focus:ring-2 focus:ring-[#244b36]/15 dark:bg-slate-950 dark:text-white ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-100' : 'border-[#d8d9ce]'}`}
             />
             {errors.email?.message && (
               <p id="login-email-error" className="mt-1.5 text-sm text-red-600" role="alert">
@@ -95,20 +92,20 @@ export default function Login() {
             )}
           </div>
           <div className="w-full">
-            <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-slate-800 dark:text-slate-100">
+            <label
+              htmlFor="login-password"
+              className="mb-1.5 block text-sm font-medium text-[#27362d] dark:text-slate-100"
+            >
               Password
             </label>
-            <RetroInput
+            <input
               id="login-password"
               type="password"
               autoComplete="current-password"
               aria-invalid={Boolean(errors.password)}
               aria-describedby={errors.password ? 'login-password-error' : undefined}
               {...register('password')}
-              bg="#FFFFFF"
-              textColor="#1E5631"
-              borderColor={errors.password ? '#DC2626' : '#000000'}
-              className="w-[calc(100%-0.5rem)]"
+              className={`w-full rounded-md border bg-white px-3.5 py-3 text-[#27362d] outline-none transition placeholder:text-slate-400 focus:border-[#244b36] focus:ring-2 focus:ring-[#244b36]/15 dark:bg-slate-950 dark:text-white ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-100' : 'border-[#d8d9ce]'}`}
             />
             {errors.password?.message && (
               <p id="login-password-error" className="mt-1.5 text-sm text-red-600" role="alert">
@@ -124,23 +121,24 @@ export default function Login() {
               {errors.root.serverError.message}
             </p>
           )}
-          <RetroButton
-            bg="#1E5631"
-            textColor="#FFFFFF"
-            borderColor="#000000"
-            shadow="#000000"
-            className="mx-0 my-0 w-full justify-center px-5 py-3 disabled:cursor-not-allowed disabled:opacity-60"
+          <Button
+            variant="primary"
+            size="lg"
+            className="mt-1 w-full rounded-md bg-[#244b36] text-sm hover:bg-[#173a2c] focus-visible:ring-[#244b36] dark:bg-emerald-700 dark:hover:bg-emerald-600"
             type="submit"
             disabled={isSubmitting}
             aria-busy={isSubmitting}
           >
             {isSubmitting && <Loader size="sm" label="Signing in" className="border-current" />}
             {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </RetroButton>
+          </Button>
         </form>
-        <p className="mt-5 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-6 text-sm text-[#58655a] dark:text-slate-300">
           Don&apos;t have an account?{' '}
-          <Link className="font-medium text-leaf underline dark:text-emerald-300" to="/register">
+          <Link
+            className="font-semibold text-[#244b36] underline underline-offset-4 hover:text-[#173a2c] dark:text-emerald-300 dark:hover:text-emerald-200"
+            to="/register"
+          >
             Register
           </Link>
         </p>

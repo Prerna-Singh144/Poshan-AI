@@ -61,19 +61,6 @@ body {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-.landing-header {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: min(1240px, calc(100% - 96px));
-  height: 92px;
-  margin: 0 auto;
-  border-bottom: 1px solid rgb(39 54 45 / 10%);
-}
-
-.landing-brand,
 .footer-brand {
   display: inline-flex;
   align-items: center;
@@ -85,42 +72,10 @@ body {
   text-decoration: none;
 }
 
-.landing-brand img {
-  width: 38px;
-  height: 38px;
-}
-
-.brand-ai,
 .footer-brand span {
   color: #96a76e;
 }
 
-.landing-nav,
-.landing-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 35px;
-}
-
-.landing-nav a,
-.landing-login {
-  color: #58655a;
-  font-size: 13px;
-  font-weight: 550;
-  text-decoration: none;
-  transition: color 180ms ease;
-}
-
-.landing-nav a:hover,
-.landing-login:hover {
-  color: var(--forest);
-}
-
-.landing-header-actions {
-  gap: 23px;
-}
-
-.landing-small-cta,
 .hero-primary {
   display: inline-flex;
   align-items: center;
@@ -135,13 +90,6 @@ body {
   transition: background 180ms ease, transform 180ms ease;
 }
 
-.landing-small-cta {
-  padding: 12px 15px;
-  gap: 14px;
-  font-size: 12px;
-}
-
-.landing-small-cta:hover,
 .hero-primary:hover {
   transform: translateY(-2px);
   background: var(--deep-forest);
@@ -742,49 +690,6 @@ body {
   color: #95a376;
 }
 
-/* Desktop spatial feature cards; small screens retain a lightweight list. */
-.sticky-features {
-  padding: 94px max(48px, calc((100% - 1240px) / 2)) 110px;
-  background: #173a2c;
-  color: #f9fbf9;
-}
-
-.sticky-features-heading { margin: 0 0 34px; }
-.sticky-features-heading .section-kicker { color: #f6a34d; }
-.sticky-features-heading h2 {
-  max-width: 780px;
-  margin: 0;
-  font-family: Inter, ui-sans-serif, sans-serif;
-  font-size: clamp(36px, 5vw, 64px);
-  font-weight: 850;
-  letter-spacing: -2.8px;
-  line-height: .98;
-  text-transform: uppercase;
-}
-.sticky-features-heading h2 span { color: #f57c00; }
-.sticky-feature-list { display: grid; gap: 22px; }
-.sticky-feature-card {
-  position: sticky;
-  top: 104px;
-  z-index: calc(1 + var(--card-index));
-  display: grid;
-  min-height: 430px;
-  grid-template-columns: .85fr 1.15fr;
-  overflow: hidden;
-  border: 2px solid #102a1e;
-  border-radius: 14px;
-  background: #f9fbf9;
-  color: #173a2c;
-  box-shadow: 8px 8px 0 #f57c00;
-  transform-origin: center top;
-}
-.sticky-feature-copy { position: relative; display: flex; flex-direction: column; justify-content: center; padding: clamp(28px, 5vw, 64px); }
-.sticky-feature-copy > p { margin: 0 0 18px; color: #e16e00; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; }
-.sticky-feature-copy h3 { max-width: 430px; margin: 0 0 18px; font-size: clamp(32px, 4vw, 54px); font-weight: 850; letter-spacing: -2px; line-height: 1; }
-.sticky-feature-copy > span { max-width: 390px; color: #59665d; font-size: 15px; line-height: 1.7; }
-.sticky-feature-copy b { margin-top: 35px; color: #b4c5b8; font-size: 28px; }
-.sticky-feature-image { min-height: 320px; overflow: hidden; background: #dce8dc; }
-.sticky-feature-image img { display: block; width: 100%; height: 100%; min-height: 430px; object-fit: cover; }
 .landing-hero { isolation: isolate; }
 .landing-hero::before {
   position: absolute;
@@ -799,7 +704,6 @@ body {
 }
 .hero-copy h1 { font-family: Inter, ui-sans-serif, sans-serif; font-weight: 900; letter-spacing: -5px; text-transform: uppercase; }
 .hero-copy h1 span { color: #f57c00; font-style: normal; }
-.landing-header { position: sticky; top: 0; z-index: 20; width: 100%; height: 76px; padding: 0 max(48px, calc((100% - 1240px) / 2)); background: rgb(249 251 249 / 76%); border-bottom: 1px solid rgb(255 255 255 / 40%); backdrop-filter: blur(14px); }
 .liquid-glass-panel { border: 1px solid rgb(255 255 255 / 75%); backdrop-filter: blur(24px); background-image: radial-gradient(ellipse at 0 0, rgb(236 253 245 / 70%), transparent 55%), linear-gradient(145deg, rgb(255 255 255 / 94%), rgb(248 250 249 / 88%)); }
 .dashboard-clay-stat { border: 0; border-radius: 24px; background: linear-gradient(145deg, #fff, #f1f7f1); box-shadow: 12px 12px 26px rgb(31 66 44 / 8%), -8px -8px 20px #fff, inset 1px 1px 2px rgb(255 255 255 / 90%); }
 .dashboard-bento-feature { border-radius: 26px; background: linear-gradient(145deg, #f3f7f2, #fff); padding: clamp(16px, 3vw, 30px); box-shadow: 0 18px 50px rgb(31 66 44 / 6%); }
@@ -818,7 +722,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  .landing-header,
   .landing-hero,
   .landing-footer {
     width: calc(100% - 56px);
@@ -841,51 +744,11 @@ body {
     padding-right: 28px;
     padding-left: 28px;
   }
-  .sticky-features { padding: 68px 28px 76px; }
-  .sticky-feature-card { min-height: 370px; }
-  .sticky-feature-image img { min-height: 370px; }
-  .landing-header { padding: 0 28px; }
 }
 
 @media (max-width: 680px) {
-  .landing-header {
-    width: calc(100% - 40px);
-    height: 74px;
-  }
-  .landing-header { padding: 0 20px; }
   .landing-hero::before { inset: 6px -8px 12px; }
   .hero-copy h1 { font-size: clamp(42px, 12vw, 64px); letter-spacing: -2.5px; }
-  .sticky-features { padding: 58px 20px 64px; }
-  .sticky-features-heading h2 { letter-spacing: -1.8px; }
-  .sticky-feature-card { position: relative; min-height: 0; grid-template-columns: 1fr; box-shadow: 5px 5px 0 #f57c00; }
-  .sticky-feature-copy { min-height: 250px; padding: 28px; }
-  .sticky-feature-copy h3 { font-size: 38px; }
-  .sticky-feature-copy b { margin-top: 20px; }
-  .sticky-feature-image { min-height: 235px; }
-  .sticky-feature-image img { min-height: 235px; max-height: 260px; }
-
-  .landing-brand {
-    gap: 7px;
-    font-size: 19px;
-  }
-
-  .landing-brand img {
-    width: 33px;
-    height: 33px;
-  }
-
-  .landing-nav,
-  .landing-login {
-    display: none;
-  }
-
-  .landing-header-actions {
-    gap: 0;
-  }
-
-  .landing-small-cta {
-    padding: 11px 13px;
-  }
 
   .landing-hero {
     display: flex;
@@ -1001,7 +864,6 @@ body {
   }
 
   .benefit-card,
-  .landing-small-cta,
   .hero-primary,
   .plate {
     transition: none;
@@ -1011,5 +873,271 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .shimmer {
     animation: none;
+  }
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0f1712;
+  color: #e5eee7;
+}
+
+.dark .landing-page {
+  --forest: #a8d2b2;
+  --deep-forest: #e1eee4;
+  --moss: #b3ca91;
+  --sage: #25372b;
+  --paper: #101912;
+  --ink: #e5eee7;
+}
+
+.dark .landing-page .landing-hero::before {
+  border-color: #557d60;
+  background-color: #17231a;
+  box-shadow: 9px 9px 0 #b9681a;
+}
+
+.dark .landing-page .hero-eyebrow,
+.dark .landing-page .section-kicker,
+.dark .landing-page .hero-description,
+.dark .landing-page .hero-secondary,
+.dark .landing-page .values-intro,
+.dark .landing-page .landing-footer p,
+.dark .landing-page .landing-footer > span {
+  color: #b5c2b7;
+}
+
+.dark .landing-page .hero-copy h1,
+.dark .landing-page .values-heading h2,
+.dark .landing-page .benefit-card h3 {
+  color: #e1eee4;
+}
+
+.dark .landing-page .hero-copy h1 span,
+.dark .landing-page .values-heading h2 span {
+  color: #b3ca91;
+}
+
+.dark .landing-page .landing-values {
+  background: #17221a;
+}
+
+.dark .landing-page .benefit-card {
+  border-color: rgb(177 204 169 / 18%);
+  background: rgb(30 43 33 / 90%);
+}
+
+.dark .landing-page .benefit-card p,
+.dark .landing-page .benefit-number {
+  color: #b5c2b7;
+}
+
+.dark .landing-page .benefit-icon {
+  background: #304636;
+  color: #c4d8a8;
+}
+
+.dark .landing-page #benefits {
+  background: #111b14;
+  color: #e1eee4;
+}
+
+.dark .landing-page #benefits h2,
+.dark .landing-page #benefits h3 {
+  color: #dcebe0;
+}
+
+.dark .landing-page #benefits p {
+  color: #b5c2b7;
+}
+
+.dark .landing-page #benefits .group {
+  border-color: #34483a;
+  background: #1a281e;
+}
+
+.dark .landing-page #benefits .group article > div:first-child {
+  background: #1a281e;
+}
+
+.dark .landing-page .ingredient-study {
+  color: #e1eee4;
+}
+
+.dark .landing-page .ingredient-study__eyebrow,
+.dark .landing-page .ingredient-study__intro h2,
+.dark .landing-page .ingredient-card__bottom h3,
+.dark .landing-page .ingredient-card__mark {
+  color: #d5e7d8;
+}
+
+.dark .landing-page .ingredient-study__intro > p:last-child,
+.dark .landing-page .ingredient-card__top,
+.dark .landing-page .ingredient-card__bottom p,
+.dark .landing-page .ingredient-deck__controls {
+  color: #b5c2b7;
+}
+
+.dark .landing-page .ingredient-card {
+  border-color: #34483a;
+  background: #1a281e;
+  box-shadow: 0 20px 45px rgb(0 0 0 / 30%);
+}
+
+.dark .landing-page .ingredient-card--back {
+  background: linear-gradient(145deg, #26382b, #1c2b20);
+}
+
+.dark .landing-page .ingredient-card__mark {
+  border-color: #45644c;
+  background: linear-gradient(145deg, #2b4431, #1d3022);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+}
+
+.dark .landing-page .ingredient-deck__controls button {
+  border-color: #45644c;
+  background: #1a281e;
+  color: #d5e7d8;
+}
+
+.dark .landing-page .ingredient-deck__controls button:hover {
+  background: #315a3a;
+  color: #fff;
+}
+
+.dark .dashboard-clay-stat,
+.dark .dashboard-bento-feature,
+.dark .dashboard-bento-feature article,
+.dark .dashboard-bento-feature [aria-labelledby='macro-title'],
+.dark .dashboard-bento-feature [aria-labelledby='micronutrient-title'] {
+  border-color: #33473a;
+  background: linear-gradient(145deg, #1d2b21, #17231b);
+  box-shadow: 8px 8px 22px rgb(0 0 0 / 18%), inset 1px 1px 2px rgb(255 255 255 / 3%);
+}
+
+.dark .bg-white:not([class*='dark:bg-']) {
+  background-color: #18231c;
+}
+
+.dark .bg-white\/90:not([class*='dark:bg-']),
+.dark .bg-white\/95:not([class*='dark:bg-']) {
+  background-color: rgb(24 35 28 / 95%);
+}
+
+.dark .bg-white\/80:not([class*='dark:bg-']) {
+  background-color: rgb(24 35 28 / 90%);
+}
+
+.dark .bg-slate-50:not([class*='dark:bg-']) {
+  background-color: #202d24;
+}
+
+.dark .bg-cream:not([class*='dark:bg-']) {
+  background-color: #17221a;
+}
+
+.dark .bg-emerald-50:not([class*='dark:bg-']) {
+  background-color: #203a29;
+}
+
+.dark .bg-emerald-100:not([class*='dark:bg-']) {
+  background-color: #294431;
+}
+
+.dark .bg-amber-50:not([class*='dark:bg-']) {
+  background-color: #382d19;
+}
+
+.dark .bg-amber-100:not([class*='dark:bg-']) {
+  background-color: #45391f;
+}
+
+.dark .bg-orange-50:not([class*='dark:bg-']) {
+  background-color: #39291b;
+}
+
+.dark .bg-orange-100:not([class*='dark:bg-']) {
+  background-color: #49321f;
+}
+
+.dark .bg-rose-50:not([class*='dark:bg-']) {
+  background-color: #3b2225;
+}
+
+.dark .text-slate-950:not([class*='dark:text-']),
+.dark .text-slate-900:not([class*='dark:text-']),
+.dark .text-slate-800:not([class*='dark:text-']) {
+  color: #e2ece5;
+}
+
+.dark .text-slate-700:not([class*='dark:text-']),
+.dark .text-slate-600:not([class*='dark:text-']) {
+  color: #c0cec3;
+}
+
+.dark .text-slate-500:not([class*='dark:text-']) {
+  color: #a6b5aa;
+}
+
+.dark .text-emerald-950:not([class*='dark:text-']),
+.dark .text-emerald-900:not([class*='dark:text-']) {
+  color: #d0e6d4;
+}
+
+.dark .text-emerald-800:not([class*='dark:text-']),
+.dark .text-emerald-700:not([class*='dark:text-']) {
+  color: #a8d2b2;
+}
+
+.dark .text-orange-900:not([class*='dark:text-']),
+.dark .text-amber-950:not([class*='dark:text-']) {
+  color: #f3d9a0;
+}
+
+.dark .text-orange-600:not([class*='dark:text-']),
+.dark .text-amber-900:not([class*='dark:text-']) {
+  color: #edc17f;
+}
+
+.dark .text-rose-800:not([class*='dark:text-']),
+.dark .text-rose-700:not([class*='dark:text-']) {
+  color: #ffc1c5;
+}
+
+.dark .border-slate-100:not([class*='dark:border-']),
+.dark .border-slate-200:not([class*='dark:border-']),
+.dark .border-emerald-100:not([class*='dark:border-']),
+.dark .border-emerald-200:not([class*='dark:border-']) {
+  border-color: #34463a;
+}
+
+.dark .border-amber-300:not([class*='dark:border-']) {
+  border-color: #715c31;
+}
+
+.dark .border-rose-200:not([class*='dark:border-']) {
+  border-color: #68383e;
+}
+
+.dark select option {
+  background-color: #18231c;
+  color: #e2ece5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html,
+  body,
+  #root,
+  .landing-page,
+  .landing-values,
+  .benefit-card {
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
   }
 }

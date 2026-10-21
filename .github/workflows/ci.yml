@@ -50,19 +50,23 @@ jobs:
 
       - name: Install frontend dependencies
         if: (matrix.check == 'lint' || matrix.check == 'build') && steps.frontend-cache.outputs.cache-hit != 'true'
-        run: npm ci --prefix poshanai-frontend
+        working-directory: poshanai-frontend
+        run: npm ci
 
       - name: Install backend dependencies
         if: (matrix.check == 'test' || matrix.check == 'lint') && steps.backend-cache.outputs.cache-hit != 'true'
-        run: npm ci --prefix poshanai-backend
+        working-directory: poshanai-backend
+        run: npm ci
 
       - name: Run ESLint
         if: matrix.check == 'lint'
-        run: npm run lint --prefix poshanai-frontend
+        working-directory: poshanai-frontend
+        run: npm run lint
 
       - name: Run backend ESLint
         if: matrix.check == 'lint'
-        run: npm run lint --prefix poshanai-backend
+        working-directory: poshanai-backend
+        run: npm run lint
 
       - name: Check formatting
         if: matrix.check == 'lint'
@@ -70,6 +74,7 @@ jobs:
 
       - name: Run backend tests with mongodb-memory-server
         if: matrix.check == 'test'
+        working-directory: poshanai-backend
         env:
           NODE_ENV: test
           TRUST_PROXY_HOPS: 1
@@ -77,11 +82,12 @@ jobs:
           JWT_ACCESS_SECRET: ci-access-secret-that-is-long-enough-123
           JWT_REFRESH_SECRET: ci-refresh-secret-that-is-long-enough-456
           STORAGE_TYPE: local
-        run: npm test --prefix poshanai-backend
+        run: npm test
 
       - name: Build frontend
         if: matrix.check == 'build'
-        run: npm run build --prefix poshanai-frontend
+        working-directory: poshanai-frontend
+        run: npm run build
 
       - name: Set up Node.js for dependency audit
         if: matrix.check == 'security'
@@ -95,11 +101,13 @@ jobs:
 
       - name: Audit backend production dependencies
         if: matrix.check == 'security'
-        run: npm audit --prefix poshanai-backend --omit=dev --audit-level=high
+        working-directory: poshanai-backend
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Audit frontend production dependencies
         if: matrix.check == 'security'
-        run: npm audit --prefix poshanai-frontend --omit=dev --audit-level=high
+        working-directory: poshanai-frontend
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build backend image (no push)
         if: matrix.check == 'docker'
