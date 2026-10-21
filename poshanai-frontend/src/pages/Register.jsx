@@ -157,7 +157,7 @@ export default function Register() {
         return;
       }
 
-      navigate('/dashboard', { replace: true });
+      navigate(session.user?.onboardingCompleted ? '/dashboard' : '/onboarding', { replace: true });
     } catch (error) {
       setError('root.serverError', {
         type: 'server',

@@ -17,5 +17,11 @@ export default function ProtectedRoute({ children }) {
   if (!isLoading && (!isAuthenticated || !user)) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
+  if (user.onboardingCompleted !== true && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+  if (user.onboardingCompleted === true && location.pathname === '/onboarding') {
+    return <Navigate to="/dashboard" replace />;
+  }
   return children ?? <Outlet />;
 }

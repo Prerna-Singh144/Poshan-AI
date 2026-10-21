@@ -141,6 +141,7 @@
       "Express API startup, MongoDB connection, health endpoint, and error handling.",
       "Helmet, restricted credentialed CORS, JSON body-size limit, Mongo operator sanitization, and API rate limiting.",
       "User model and register/login/refresh/logout routes with access-token and refresh-cookie handling.",
+      "Consent-first, four-step lifestyle onboarding with React Hook Form/Zod validation, persisted completion gating, and a recommendations page with medical disclaimers.",
       "Frontend API client modules and Redux slices for users, reports, and meal plans.",
       "Indexed Report model and authenticated report upload/list/get/delete endpoints with ownership checks.",
       "Authenticated food and supplement logging with daily calorie and micronutrient totals compared against project reference values.",
@@ -238,6 +239,19 @@
         "path": "/api/auth/logout",
         "auth": "Refresh-token cookie",
         "status": "Implemented."
+      },
+      {
+        "method": "POST",
+        "path": "/api/lifestyle/onboarding",
+        "auth": "Access token",
+        "body": "Lifestyle questionnaire and consent: consent must be true.",
+        "status": "Implemented; saves the authenticated user's profile and marks onboarding complete."
+      },
+      {
+        "method": "GET",
+        "path": "/api/lifestyle/recommendations",
+        "auth": "Access token",
+        "status": "Implemented; returns reviewed test rules and a medical disclaimer. The rules file is currently empty, so recommendations may be empty."
       },
       {
         "method": "POST",
