@@ -11,7 +11,7 @@ import { useToast } from '../components/common/Toast.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import '../components/ui/threeui/threeui.css';
 
-const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx').then((module) => ({ default: module.WarpFieldBackground })));
+const WarpFieldBackground = lazy(() => import('../components/ui/threeui/WarpFieldBackground.jsx'));
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
