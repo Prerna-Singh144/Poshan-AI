@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import encrypt from 'mongoose-encryption';
 import { AUTH_SETTINGS } from '../config/constants.js';
+import { env } from '../config/env.js';
 
 const refreshTokenSchema = new mongoose.Schema(
   {
@@ -35,6 +37,15 @@ const userSchema = new mongoose.Schema(
     passwordResetTokenExpiresAt: { type: Date, select: false },
     profile: { type: profileSchema, default: undefined },
     onboardingCompleted: { type: Boolean, default: false },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, select: false },
+    twoFactorBackupCodes: { type: [String], default: [], select: false },
+    twoFactorChallengeHash: { type: String, select: false },
+    twoFactorChallengeExpiresAt: { type: Date, select: false },
+    twoFactorFailedAttempts: { type: Number, default: 0, select: false },
+    twoFactorLockUntil: { type: Date, select: false },
+    twoFactorLastCounter: { type: Number, select: false },
+    tokenVersion: { type: Number, default: 0, min: 0, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
     refreshTokens: { type: [refreshTokenSchema], default: [], select: false },
     uploadCount: { type: Number, default: 0, min: 0 },
@@ -56,6 +67,12 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false },
 );
+
+userSchema.plugin(encrypt, {
+  encryptionKey: env.encryptionKey,
+  signingKey: env.signingKey,
+  encryptedFields: ['twoFactorSecret'],
+});
 
 userSchema.methods.setPassword = async function setPassword(password) {
   this.passwordHash = await bcrypt.hash(password, AUTH_SETTINGS.bcryptSaltRounds);

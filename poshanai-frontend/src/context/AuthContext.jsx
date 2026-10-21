@@ -4,6 +4,10 @@ import {
   logout as apiLogout,
   register as apiRegister,
   verifyOTP as apiVerifyOTP,
+  verifyTwoFactor as apiVerifyTwoFactor,
+  setupTwoFactor as apiSetupTwoFactor,
+  verifyTwoFactorSetup as apiVerifyTwoFactorSetup,
+  disableTwoFactor as apiDisableTwoFactor,
 } from '../api/authApi.js';
 import {
   getAccessToken,
@@ -51,6 +55,7 @@ function getRefreshDelay(token) {
 export function AuthProvider({ children }) {
   const [accessToken, setToken] = useState(getAccessToken);
   const [user, setUser] = useState(readStoredUser);
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
   const [isLoading, setIsLoading] = useState(
     () => hasRefreshCookie() && (!getAccessToken() || !readStoredUser()),
   );
@@ -90,9 +95,20 @@ export function AuthProvider({ children }) {
       const requestVersion = ++sessionVersion.current;
       try {
         const session = await apiLogin(credentials);
+        if (session.requiresTwoFactor) {
+          if (requestVersion !== sessionVersion.current) return null;
+          setSession({ accessToken: null, user: null });
+          setTwoFactorChallenge({
+            tempToken: session.tempToken,
+            expiresAt: Date.now() + (session.expiresIn ?? 300) * 1000,
+          });
+          setIsLoading(false);
+          return { requiresTwoFactor: true };
+        }
         if (!session.accessToken) throw new Error('Login response did not include an access token.');
         if (requestVersion !== sessionVersion.current) return null;
         clearAllCache();
+        setTwoFactorChallenge(null);
         setSession(session);
         if (import.meta.env.DEV) {
           console.info('[auth] login session persistence', {
@@ -137,9 +153,20 @@ export function AuthProvider({ children }) {
     const requestVersion = ++sessionVersion.current;
     try {
       const session = await apiVerifyOTP(email, otp, 'login');
+      if (session.requiresTwoFactor) {
+        if (requestVersion !== sessionVersion.current) return null;
+        setSession({ accessToken: null, user: null });
+        setTwoFactorChallenge({
+          tempToken: session.tempToken,
+          expiresAt: Date.now() + (session.expiresIn ?? 300) * 1000,
+        });
+        setIsLoading(false);
+        return { requiresTwoFactor: true };
+      }
       if (!session.accessToken) throw new Error('OTP verification did not return a session.');
       if (requestVersion !== sessionVersion.current) return null;
       clearAllCache();
+      setTwoFactorChallenge(null);
       setSession(session);
       setIsLoading(false);
       return session.user;
@@ -149,8 +176,40 @@ export function AuthProvider({ children }) {
     }
   }, [setSession]);
 
+  const verifyTwoFactor = useCallback(async (code) => {
+    const requestVersion = ++sessionVersion.current;
+    const challenge = twoFactorChallenge;
+    if (!challenge?.tempToken || challenge.expiresAt <= Date.now()) {
+      setTwoFactorChallenge(null);
+      throw new Error('Your verification code expired. Sign in again.');
+    }
+    try {
+      const session = await apiVerifyTwoFactor(challenge.tempToken, code);
+      if (!session.accessToken) throw new Error('Two-factor verification did not return a session.');
+      if (requestVersion !== sessionVersion.current) return null;
+      setTwoFactorChallenge(null);
+      clearAllCache();
+      setSession(session);
+      setIsLoading(false);
+      return session.user;
+    } catch (error) {
+      if (requestVersion === sessionVersion.current) setIsLoading(false);
+      throw error;
+    }
+  }, [setSession, twoFactorChallenge]);
+
+  const cancelTwoFactor = useCallback(() => {
+    setTwoFactorChallenge(null);
+    setIsLoading(false);
+  }, []);
+
+  const setupTwoFactor = useCallback(() => apiSetupTwoFactor(), []);
+  const verifyTwoFactorSetup = useCallback((secret, code) => apiVerifyTwoFactorSetup(secret, code), []);
+  const disableTwoFactor = useCallback((password, code) => apiDisableTwoFactor(password, code), []);
+
   const logout = useCallback(async () => {
     sessionVersion.current += 1;
+    setTwoFactorChallenge(null);
     setIsLoading(false);
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
     try {
@@ -234,12 +293,35 @@ export function AuthProvider({ children }) {
       isLoading,
       login,
       loginWithOtp,
+      verifyTwoFactor,
+      hasPendingTwoFactor: Boolean(twoFactorChallenge?.tempToken),
+      twoFactorExpiresAt: twoFactorChallenge?.expiresAt ?? null,
+      cancelTwoFactor,
+      setupTwoFactor,
+      verifyTwoFactorSetup,
+      disableTwoFactor,
       register,
       logout,
       refresh,
       markOnboardingCompleted,
     }),
-    [user, accessToken, isLoading, login, loginWithOtp, register, logout, refresh, markOnboardingCompleted],
+    [
+      user,
+      accessToken,
+      isLoading,
+      login,
+      loginWithOtp,
+      verifyTwoFactor,
+      twoFactorChallenge,
+      cancelTwoFactor,
+      setupTwoFactor,
+      verifyTwoFactorSetup,
+      disableTwoFactor,
+      register,
+      logout,
+      refresh,
+      markOnboardingCompleted,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { rateLimit } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { env } from '../config/env.js';
 
 let redisClient;
@@ -62,6 +62,11 @@ class RedisWindowStore {
   }
 }
 
+export function createSensitiveRateLimitStore(name) {
+  if (env.nodeEnv === 'test' || !env.redisUrl) return undefined;
+  return new RedisWindowStore(name);
+}
+
 export function sensitiveRateLimiter({ name, windowMs, limit }) {
   if (env.nodeEnv === 'test') return (_req, _res, next) => next();
 
@@ -73,7 +78,7 @@ export function sensitiveRateLimiter({ name, windowMs, limit }) {
     store: env.redisUrl ? new RedisWindowStore(name) : undefined,
     keyGenerator: (req) => req.user?._id
       ? `user:${req.user._id}`
-      : `ip:${req.ip}`,
+      : `ip:${ipKeyGenerator(req.ip)}`,
     handler: (_req, res) => res.status(429).json({
       success: false,
       error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },

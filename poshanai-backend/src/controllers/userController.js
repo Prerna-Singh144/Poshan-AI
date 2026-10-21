@@ -13,12 +13,12 @@ function clearRefreshCookie(res) {
   res.clearCookie(env.refreshCookieName, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   });
   res.clearCookie(env.refreshCookiePresenceName, {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   });
 }
@@ -34,6 +34,7 @@ export const getProfile = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       emailVerified: Boolean(user.emailVerified),
+      twoFactorEnabled: Boolean(user.twoFactorEnabled),
       role: user.role,
       profile: user.profile,
       consent: user.consent,
@@ -93,6 +94,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       emailVerified: Boolean(user.emailVerified),
+      twoFactorEnabled: Boolean(user.twoFactorEnabled),
       profile: user.profile,
       consent: user.consent,
       status: user.status,

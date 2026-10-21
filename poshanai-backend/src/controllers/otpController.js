@@ -7,7 +7,7 @@ import httpError from '../utils/httpError.js';
 import { AUTH_SETTINGS, OTP_SETTINGS } from '../config/constants.js';
 import { env } from '../config/env.js';
 import logger from '../utils/logger.js';
-import { clearRefreshCookie, issueAuthenticatedSession } from './authController.js';
+import { clearRefreshCookie, issueAuthenticatedSession, issueTwoFactorChallenge } from './authController.js';
 import { sendEmail } from '../utils/sendEmail.js';
 
 const purposeLabels = Object.freeze({
@@ -111,13 +111,19 @@ export const verifyOTP = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     email,
     status: { $nin: ['pending_deletion', 'deleted'] },
-  });
+  }).select('+tokenVersion +twoFactorLockUntil');
   if (!user) throw genericOtpError();
 
   if (purpose === 'login') {
     if (!user.emailVerified) {
       user.emailVerified = true;
       await user.save();
+    }
+    if (user.twoFactorEnabled) {
+      if (user.twoFactorLockUntil && user.twoFactorLockUntil.getTime() > Date.now()) {
+        throw httpError(429, 'TWO_FACTOR_LOCKED', 'Too many verification attempts. Try again later.');
+      }
+      return res.json(await issueTwoFactorChallenge(user, res));
     }
     const data = await issueAuthenticatedSession(user, req, res, 'otp_login');
     return res.json({ success: true, data });

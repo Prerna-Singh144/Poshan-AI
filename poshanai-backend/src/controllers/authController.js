@@ -7,7 +7,7 @@ import httpError from '../utils/httpError.js';
 import { AUTH_SETTINGS, COMPLIANCE_SETTINGS } from '../config/constants.js';
 import { logAuditEvent } from '../services/auditService.js';
 
-function userPayload(user) {
+export function userPayload(user) {
   return {
     id: user.id,
     name: user.name,
@@ -16,6 +16,7 @@ function userPayload(user) {
     profile: user.profile,
     onboardingCompleted: Boolean(user.onboardingCompleted),
     role: user.role,
+    twoFactorEnabled: Boolean(user.twoFactorEnabled),
     consent: user.consent,
     status: user.status,
     createdAt: user.createdAt,
@@ -27,14 +28,14 @@ function hashToken(token) {
 }
 
 function createAccessToken(user) {
-  return jwt.sign({ role: user.role, type: 'access' }, env.jwtAccessSecret, {
+  return jwt.sign({ role: user.role, type: 'access', scope: 'full_access', tokenVersion: user.tokenVersion ?? 0 }, env.jwtAccessSecret, {
     subject: user.id,
     expiresIn: env.jwtAccessExpiry,
   });
 }
 
 function createRefreshToken(user) {
-  return jwt.sign({ type: 'refresh', jti: randomUUID() }, env.jwtRefreshSecret, {
+  return jwt.sign({ type: 'refresh', jti: randomUUID(), tokenVersion: user.tokenVersion ?? 0 }, env.jwtRefreshSecret, {
     subject: user.id,
     expiresIn: env.jwtRefreshExpiry,
   });
@@ -59,13 +60,13 @@ export function setRefreshCookie(res, token) {
   res.cookie(env.refreshCookieName, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: AUTH_SETTINGS.refreshCookieMaxAgeMs,
   });
   res.cookie(env.refreshCookiePresenceName, '1', {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: AUTH_SETTINGS.refreshCookieMaxAgeMs,
   });
@@ -75,14 +76,46 @@ export function clearRefreshCookie(res) {
   res.clearCookie(env.refreshCookieName, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   });
   res.clearCookie(env.refreshCookiePresenceName, {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   });
+}
+
+export async function issueTwoFactorChallenge(user, res) {
+  const challengeId = randomUUID();
+  const tokenVersion = user.tokenVersion ?? 0;
+  const challengeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+  const challengeFilter = {
+    _id: user._id,
+    $or: [{ tokenVersion }, ...(tokenVersion === 0 ? [{ tokenVersion: { $exists: false } }] : [])],
+  };
+  const challengeUpdate = await User.updateOne(
+    challengeFilter,
+    {
+      $set: {
+        tokenVersion,
+        twoFactorChallengeHash: hashToken(challengeId),
+        twoFactorChallengeExpiresAt: challengeExpiresAt,
+        twoFactorFailedAttempts: 0,
+      },
+      $unset: { twoFactorLockUntil: 1 },
+    },
+  );
+  if (challengeUpdate.matchedCount !== 1) {
+    throw httpError(401, 'TWO_FACTOR_CHALLENGE_INVALID', 'Sign in again to verify your account.');
+  }
+  const tempToken = jwt.sign(
+    { scope: '2fa_pending', type: '2fa_temp', tokenVersion, jti: challengeId },
+    env.jwtAccessSecret,
+    { subject: user.id, expiresIn: '5m' },
+  );
+  clearRefreshCookie(res);
+  return { success: true, requiresTwoFactor: true, tempToken, expiresIn: 300 };
 }
 
 async function appendRefreshToken(userId, refreshTokenEntry) {
@@ -144,21 +177,45 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export async function issueAuthenticatedSession(user, req, res, action = 'login') {
-  const issued = issueSession(user, req.get('user-agent') ?? 'Unknown device');
-  await appendRefreshToken(user._id, issued.refreshTokenEntry);
+  const currentUser = await User.findOneAndUpdate(
+    { _id: user._id, status: { $nin: ['pending_deletion', 'deleted'] } },
+    {
+      $inc: { tokenVersion: 1 },
+      $set: { refreshTokens: [] },
+      $unset: {
+        twoFactorChallengeHash: 1,
+        twoFactorChallengeExpiresAt: 1,
+        twoFactorFailedAttempts: 1,
+        twoFactorLockUntil: 1,
+      },
+    },
+    { new: true },
+  ).select('+tokenVersion');
+  if (!currentUser) throw httpError(401, 'INVALID_CREDENTIALS', 'Unable to create an authenticated session.');
+  const issued = issueSession(currentUser, req.get('user-agent') ?? 'Unknown device');
+  await appendRefreshToken(currentUser._id, issued.refreshTokenEntry);
   setRefreshCookie(res, issued.refreshToken);
-  await logAuditEvent({ userId: user._id, action, req });
+  await logAuditEvent({ userId: currentUser._id, action, req });
   return issued.data;
 }
 
 export const login = asyncHandler(async (req, res) => {
-  const user = await User.findOne({ email: req.body.email.toLowerCase() }).select('+passwordHash');
+  const user = await User.findOne({ email: req.body.email.toLowerCase() })
+    .select('+passwordHash +tokenVersion +twoFactorLockUntil');
   if (!user || !(await user.verifyPassword(req.body.password))) {
     throw httpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
   }
 
   if (user.status === 'pending_deletion') {
     throw httpError(403, 'ACCOUNT_DELETION_PENDING', 'This account is scheduled for deletion.');
+  }
+
+  if (user.twoFactorLockUntil && user.twoFactorLockUntil.getTime() > Date.now()) {
+    throw httpError(429, 'TWO_FACTOR_LOCKED', 'Too many verification attempts. Try again later.');
+  }
+
+  if (user.twoFactorEnabled) {
+    return res.json(await issueTwoFactorChallenge(user, res));
   }
 
   const data = await issueAuthenticatedSession(user, req, res);
@@ -185,8 +242,13 @@ export const refresh = asyncHandler(async (req, res) => {
     throw httpError(401, 'REFRESH_TOKEN_INVALID', 'Refresh token is invalid or expired.');
   }
 
-  const user = await User.findById(payload.sub).select('+refreshTokens');
+  const user = await User.findById(payload.sub).select('+refreshTokens +tokenVersion');
   if (!user) {
+    clearRefreshCookie(res);
+    throw httpError(401, 'REFRESH_TOKEN_REVOKED', 'Refresh token is invalid or expired.');
+  }
+
+  if ((payload.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
     clearRefreshCookie(res);
     throw httpError(401, 'REFRESH_TOKEN_REVOKED', 'Refresh token is invalid or expired.');
   }

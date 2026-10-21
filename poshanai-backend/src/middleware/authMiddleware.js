@@ -15,6 +15,12 @@ export function verifyToken(req, _res, next) {
 
   try {
     const payload = jwt.verify(token, env.jwtAccessSecret, { algorithms: ['HS256'] });
+    if (payload.scope === '2fa_pending') {
+      return next(authError('2FA Verification Required'));
+    }
+    if (payload.scope && payload.scope !== 'full_access') {
+      return next(authError('Invalid access token.'));
+    }
     if (payload.type !== 'access' || !payload.sub) return next(authError('Invalid access token.'));
     // Route tests use signed synthetic identities; production always resolves the live account.
     if (process.env.NODE_ENV === 'test') {
@@ -24,9 +30,11 @@ export function verifyToken(req, _res, next) {
     return User.findOne({
       _id: payload.sub,
       status: { $nin: ['pending_deletion', 'deleted'] },
-    }).select('role').lean()
+    }).select('role +tokenVersion').lean()
       .then((user) => {
-        if (!user) return next(authError());
+        if (!user || (payload.tokenVersion != null && payload.tokenVersion !== (user.tokenVersion ?? 0))) {
+          return next(authError());
+        }
         req.user = { id: String(user._id), _id: user._id, role: user.role };
         return next();
       })
