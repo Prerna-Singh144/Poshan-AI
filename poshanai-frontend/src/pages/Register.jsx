@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import logo from '../assets/logo.svg';
-import Button from '../components/common/Button.jsx';
+import { Button as RetroButton } from 'pixel-retroui';
 import SmoothInput from '../components/ui/SmoothInput.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 
@@ -63,7 +63,7 @@ const registerSchema = z
   });
 
 const selectClassName =
-  'mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-emerald-900';
+  'retro-input mt-1.5 w-full border-4 border-black bg-white px-3 py-2.5 font-minecraft text-black outline-none';
 
 const SelectField = forwardRef(function SelectField(
   { label, error, children, ...props },
@@ -170,10 +170,10 @@ export default function Register() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-cream px-4 py-8 dark:bg-slate-950 sm:px-6">
+    <main className="retro-auth flex min-h-screen items-center justify-center bg-cream px-4 py-8 dark:bg-slate-950 sm:px-6">
       <section
         aria-labelledby="register-title"
-        className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8"
+        className="retro-auth-card w-full max-w-3xl p-6 sm:p-8"
       >
         <Link to="/" className="mb-6 inline-flex items-center gap-3" aria-label="PoshanAI home">
           <img src={logo} alt="" className="h-12 w-12 rounded-xl object-contain" />
@@ -312,7 +312,7 @@ export default function Register() {
           <label className="flex items-start gap-3 text-sm leading-6 text-slate-700 dark:text-slate-200">
             <input
               type="checkbox"
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-leaf focus:ring-leaf"
+              className="mt-1 h-4 w-4 rounded-none border-2 border-black text-[#1E5631] focus:ring-black"
               {...registerField('consent')}
             />
             <span>
@@ -334,14 +334,18 @@ export default function Register() {
             </p>
           )}
 
-          <Button
-            className="w-full"
+          <RetroButton
+            bg="#1E5631"
+            textColor="#FFFFFF"
+            borderColor="#000000"
+            shadow="#000000"
+            className="mx-0 my-0 w-full px-5 py-3 font-minecraft"
             type="submit"
-            loading={isSubmitting}
+            disabled={isSubmitting}
             aria-busy={isSubmitting}
           >
             {isSubmitting ? 'Creating account…' : 'Create account'}
-          </Button>
+          </RetroButton>
         </form>
 
         <p className="mt-5 text-sm text-slate-600 dark:text-slate-300">

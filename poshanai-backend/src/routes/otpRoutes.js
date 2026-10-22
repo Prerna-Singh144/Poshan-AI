@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import * as otpController from '../controllers/otpController.js';
 import { OTP_SETTINGS } from '../config/constants.js';
+import { createSensitiveRateLimitStore } from '../middleware/sensitiveRateLimiter.js';
 import {
   validateOtpRequest,
   validateOtpVerification,
@@ -14,6 +15,7 @@ const otpLimiter = process.env.NODE_ENV === 'test'
   : rateLimit({
     windowMs: OTP_SETTINGS.rateLimitWindowMs,
     limit: OTP_SETTINGS.rateLimitRequests,
+    store: createSensitiveRateLimitStore('otp-requests'),
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     handler: (_req, res) => res.status(429).json({

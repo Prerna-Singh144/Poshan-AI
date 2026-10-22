@@ -18,28 +18,9 @@ import {
 import { clearAllCache } from '../utils/memoryCache.js';
 
 export const AuthContext = createContext(null);
-const USER_STORAGE_KEY = 'user';
-const LEGACY_USER_STORAGE_KEY = 'poshanai.user';
 
 function hasRefreshCookie() {
   return document.cookie.split(';').some((cookie) => cookie.trim().startsWith('refreshTokenPresent='));
-}
-
-function readStoredUser() {
-  try {
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY) ?? localStorage.getItem(LEGACY_USER_STORAGE_KEY);
-    return storedUser ? JSON.parse(storedUser) : null;
-  } catch {
-    return null;
-  }
-}
-
-function isStored(key) {
-  try {
-    return localStorage.getItem(key) !== null;
-  } catch {
-    return false;
-  }
 }
 
 function getRefreshDelay(token) {
@@ -54,10 +35,10 @@ function getRefreshDelay(token) {
 
 export function AuthProvider({ children }) {
   const [accessToken, setToken] = useState(getAccessToken);
-  const [user, setUser] = useState(readStoredUser);
+  const [user, setUser] = useState(null);
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
   const [isLoading, setIsLoading] = useState(
-    () => hasRefreshCookie() && (!getAccessToken() || !readStoredUser()),
+    () => hasRefreshCookie() && !getAccessToken(),
   );
   const refreshTimer = useRef(null);
   const sessionVersion = useRef(0);
@@ -66,14 +47,6 @@ export function AuthProvider({ children }) {
     setAccessToken(nextToken);
     setToken(nextToken || null);
     setUser(nextToken ? nextUser : null);
-    try {
-      if (nextToken && nextUser) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
-      else localStorage.removeItem(USER_STORAGE_KEY);
-    } catch {
-      if (import.meta.env.DEV) {
-        console.warn('[auth] Browser storage unavailable; user state will not persist.');
-      }
-    }
   }, []);
 
   const refresh = useCallback(async () => {
@@ -110,13 +83,6 @@ export function AuthProvider({ children }) {
         clearAllCache();
         setTwoFactorChallenge(null);
         setSession(session);
-        if (import.meta.env.DEV) {
-          console.info('[auth] login session persistence', {
-            origin: window.location.origin,
-            tokenSaved: isStored('token'),
-            userSaved: isStored(USER_STORAGE_KEY),
-          });
-        }
         setIsLoading(false);
         return session.user;
       } catch (error) {
@@ -186,8 +152,8 @@ export function AuthProvider({ children }) {
     try {
       const session = await apiVerifyTwoFactor(challenge.tempToken, code);
       if (!session.accessToken) throw new Error('Two-factor verification did not return a session.');
-      if (requestVersion !== sessionVersion.current) return null;
       setTwoFactorChallenge(null);
+      if (requestVersion !== sessionVersion.current) return null;
       clearAllCache();
       setSession(session);
       setIsLoading(false);
@@ -223,13 +189,6 @@ export function AuthProvider({ children }) {
     if (!user) return;
     const updatedUser = { ...user, onboardingCompleted: true };
     setUser(updatedUser);
-    try {
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
-    } catch {
-      if (import.meta.env.DEV) {
-        console.warn('[auth] Browser storage unavailable; onboarding status will not persist locally.');
-      }
-    }
   }, [user]);
 
   useEffect(() => {
@@ -237,11 +196,6 @@ export function AuthProvider({ children }) {
       setToken(token);
       if (!token) {
         setUser(null);
-        try {
-          localStorage.removeItem(USER_STORAGE_KEY);
-        } catch {
-          // Ignore unavailable browser storage.
-        }
         clearAllCache();
       }
     });

@@ -350,7 +350,7 @@ export default function CalorieTracker() {
   };
 
   return (
-    <section aria-labelledby="calorie-tracker-title" className="space-y-5">
+    <section aria-labelledby="calorie-tracker-title" className="space-y-5 font-minecraft">
       <div className="space-y-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-leaf dark:text-emerald-300">Your daily balance</p>
