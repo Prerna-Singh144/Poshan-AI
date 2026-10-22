@@ -1,5 +1,11 @@
 import { create } from 'axios';
 
+try {
+  ['token', 'poshanai.accessToken', 'user', 'poshanai.user'].forEach((key) => localStorage.removeItem(key));
+} catch {
+  // Browser storage can be disabled; all authentication state is memory-only.
+}
+
 const client = create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   withCredentials: true,
@@ -7,39 +13,12 @@ const client = create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-export const ACCESS_TOKEN_STORAGE_KEY = 'token';
-const LEGACY_ACCESS_TOKEN_STORAGE_KEY = 'poshanai.accessToken';
-
-function readStoredAccessToken() {
-  try {
-    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-    if (token) return token;
-
-    const legacyToken = localStorage.getItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
-    if (legacyToken) {
-      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, legacyToken);
-      localStorage.removeItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
-    }
-    return legacyToken;
-  } catch {
-    return null;
-  }
-}
-
-let accessToken = readStoredAccessToken();
+let accessToken = null;
 let refreshPromise = null;
 const tokenListeners = new Set();
 
 export function setAccessToken(token) {
   accessToken = token || null;
-  try {
-    if (accessToken) localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-    else localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-  } catch {
-    if (import.meta.env.DEV) {
-      console.warn('[auth] Browser storage unavailable; session persistence may fail.');
-    }
-  }
   tokenListeners.forEach((listener) => listener(accessToken));
 }
 
@@ -121,7 +100,7 @@ export async function refreshAccessToken() {
 }
 
 client.interceptors.request.use((config) => {
-  const token = accessToken || readStoredAccessToken();
+  const token = accessToken;
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;

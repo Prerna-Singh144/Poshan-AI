@@ -9,6 +9,7 @@ const cards = [
     image:
       'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=1400&q=85',
     alt: 'A traditional Indian thali with a variety of dishes',
+    note: 'Everyday ingredients, made clearer',
   },
   {
     eyebrow: '02 / CLARITY FROM DATA',
@@ -17,6 +18,7 @@ const cards = [
     image:
       'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1400&q=85',
     alt: 'Healthcare professional reviewing a medical report',
+    note: 'Your information stays yours',
   },
   {
     eyebrow: '03 / MADE FOR YOU',
@@ -25,6 +27,7 @@ const cards = [
     image:
       'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1400&q=85',
     alt: 'A colorful balanced meal with fresh vegetables',
+    note: 'Small steps, at your pace',
   },
 ];
 
@@ -40,7 +43,7 @@ export default function StickyCards() {
   return (
     <section
       id="benefits"
-      className="bg-[#F9FBF9] px-5 py-16 text-slate-800 dark:bg-slate-950 dark:text-slate-100 sm:px-8 sm:py-20 lg:px-12 lg:py-24"
+      className="help-cards-retro bg-[#F9FBF9] px-5 py-16 font-minecraft text-slate-800 dark:bg-slate-950 dark:text-slate-100 sm:px-8 sm:py-20 lg:px-12 lg:py-24"
       aria-labelledby="sticky-features-title"
     >
       <div className="mx-auto max-w-7xl">
@@ -50,7 +53,7 @@ export default function StickyCards() {
           </p>
           <h2
             id="sticky-features-title"
-            className="mt-3 font-[Poppins] text-3xl font-bold leading-tight tracking-tight text-[#1E5631] dark:text-emerald-200 sm:text-4xl lg:text-5xl"
+            className="mt-3 font-minecraft text-3xl font-bold leading-tight tracking-tight text-[#1E5631] dark:text-emerald-200 sm:text-4xl lg:text-5xl"
           >
             Better choices, built from what you know.
           </h2>
@@ -76,17 +79,17 @@ export default function StickyCards() {
                 <TiltCard
                   title={card.title}
                   badgeLabel={`0${index + 1}`}
-                  className="min-h-0 rounded-3xl border-emerald-100 bg-[#F9FBF9] shadow-sm hover:shadow-xl hover:shadow-emerald-900/10 dark:border-slate-700 dark:bg-slate-900"
+                  className="help-retro-card min-h-0 rounded-none border-4 border-black bg-[#F9FBF9] shadow-[6px_6px_0px_#000] hover:shadow-[6px_6px_0px_#000]"
                 >
-                  <article className="relative grid min-h-0 overflow-hidden rounded-3xl md:grid-cols-2">
+                  <article className="relative grid min-h-0 overflow-hidden rounded-none md:grid-cols-2">
                     <div
-                      className={`relative flex min-h-[17rem] flex-col justify-center overflow-hidden p-7 sm:min-h-[20rem] sm:p-10 lg:p-14 ${
+                      className={`relative order-1 flex min-w-0 min-h-[17rem] flex-col justify-center overflow-hidden p-7 sm:min-h-[20rem] sm:p-10 lg:p-14 ${
                         isReversed ? 'order-1 md:order-2' : 'order-1'
                       }`}
                     >
                       <span
                         aria-hidden="true"
-                        className="pointer-events-none absolute -right-2 -top-12 z-0 select-none font-[Poppins] text-[9rem] font-bold leading-none text-emerald-900/[0.08] sm:text-[12rem]"
+                        className="pointer-events-none absolute -right-2 -top-12 z-0 select-none font-minecraft text-[9rem] font-bold leading-none text-emerald-900/[0.08] sm:text-[12rem]"
                       >
                         0{index + 1}
                       </span>
@@ -98,31 +101,34 @@ export default function StickyCards() {
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-700">
                           {card.eyebrow}
                         </p>
-                        <h3 className="mt-4 max-w-xl font-[Poppins] text-3xl font-bold leading-tight text-[#1E5631] dark:text-emerald-200 sm:text-4xl lg:text-5xl">
+                        <h3 className="mt-4 max-w-xl font-minecraft text-3xl font-bold leading-tight text-[#1E5631] dark:text-emerald-200 sm:text-4xl lg:text-5xl">
                           {card.title}
                         </h3>
                         <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
                           {card.text}
                         </p>
+                        <p className="mt-5 text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                          {card.note}
+                        </p>
                       </div>
                     </div>
 
                     <div
-                      className={`order-2 min-h-[15rem] p-4 sm:min-h-[18rem] sm:p-5 ${
+                      className={`order-2 min-w-0 min-h-[15rem] p-4 sm:min-h-[18rem] sm:p-5 ${
                         isReversed ? 'md:order-1' : ''
                       }`}
                     >
                       <motion.div
                         whileHover={prefersReducedMotion ? undefined : { scale: 1.025, z: 18 }}
                         transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-                        className="h-full min-h-[14rem] overflow-hidden rounded-xl bg-emerald-50 sm:min-h-[17rem]"
+                        className="help-card-image h-full min-h-[14rem] overflow-hidden rounded-none border-4 border-black bg-[#E8EDDF] sm:min-h-[17rem]"
                       >
                         <img
                           src={card.image}
                           alt={card.alt}
                           loading="lazy"
                           decoding="async"
-                          className="h-full min-h-[14rem] w-full rounded-xl object-cover sm:min-h-[17rem]"
+                          className="h-full min-h-[14rem] w-full rounded-none object-cover sm:min-h-[17rem]"
                         />
                       </motion.div>
                     </div>
