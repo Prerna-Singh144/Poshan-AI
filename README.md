@@ -54,27 +54,27 @@ Set backend variables in `poshanai-backend/.env`. `poshanai-backend/.env.example
 
 Protected endpoints require `Authorization: Bearer <accessToken>` unless noted otherwise.
 
-| Method   | Path                        | Access         | Purpose                                                                    |
-| -------- | --------------------------- | -------------- | -------------------------------------------------------------------------- |
-| `GET`    | `/health`                   | Public         | API and dependency health.                                                 |
-| `POST`   | `/api/auth/register`        | Public         | Register an account.                                                       |
-| `POST`   | `/api/auth/login`           | Public         | Log in and receive an access token plus refresh cookie.                    |
-| `POST`   | `/api/auth/refresh`         | Refresh cookie | Rotate the refresh session and receive a new access token.                 |
-| `POST`   | `/api/auth/logout`          | Refresh cookie | End the current refresh session.                                           |
-| `POST`   | `/api/lifestyle/onboarding` | Authenticated  | Save the authenticated user's consent and lifestyle questionnaire.         |
-| `GET`    | `/api/lifestyle/recommendations` | Authenticated | Return reviewed test suggestions for the user's lifestyle profile.       |
-| `GET`    | `/api/calories/maintenance` | Bearer         | Calculate BMR, maintenance calories, and estimated macros from the caller's profile. |
-| `POST`   | `/api/reports/upload`       | Bearer         | Upload a PDF, JPEG, or PNG for OCR. `POST /api/reports` is also supported. |
-| `GET`    | `/api/reports`              | Bearer         | List the caller's reports.                                                 |
-| `GET`    | `/api/reports/:id`          | Bearer         | Read an owned report and OCR results.                                      |
-| `DELETE` | `/api/reports/:id`          | Bearer         | Delete an owned report and its stored file.                                |
-| `POST`   | `/api/mealplans/generate`   | Bearer         | Generate a meal plan from an owned, OCR-complete report.                   |
-| `GET`    | `/api/mealplans`            | Bearer         | List the caller's meal plans.                                              |
-| `GET`    | `/api/mealplans/:id`        | Bearer         | Read an owned meal plan.                                                   |
-| `PATCH`  | `/api/mealplans/:id/status` | Bearer         | Set an owned plan to `active` or `completed`.                              |
-| `POST`   | `/api/logs/add-food`        | Bearer         | Add an IFCT food portion to today's log.                                   |
-| `GET`    | `/api/logs/today`           | Bearer         | Read today's food entries, nutrient totals, and calorie target comparison. |
-| `DELETE` | `/api/logs/:logId`          | Bearer         | Remove one owned food entry by its embedded entry ID.                      |
+| Method   | Path                             | Access         | Purpose                                                                              |
+| -------- | -------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| `GET`    | `/health`                        | Public         | API and dependency health.                                                           |
+| `POST`   | `/api/auth/register`             | Public         | Register an account.                                                                 |
+| `POST`   | `/api/auth/login`                | Public         | Log in and receive an access token plus refresh cookie.                              |
+| `POST`   | `/api/auth/refresh`              | Refresh cookie | Rotate the refresh session and receive a new access token.                           |
+| `POST`   | `/api/auth/logout`               | Refresh cookie | End the current refresh session.                                                     |
+| `POST`   | `/api/lifestyle/onboarding`      | Authenticated  | Save the authenticated user's consent and lifestyle questionnaire.                   |
+| `GET`    | `/api/lifestyle/recommendations` | Authenticated  | Return reviewed test suggestions for the user's lifestyle profile.                   |
+| `GET`    | `/api/calories/maintenance`      | Bearer         | Calculate BMR, maintenance calories, and estimated macros from the caller's profile. |
+| `POST`   | `/api/reports/upload`            | Bearer         | Upload a PDF, JPEG, or PNG for OCR. `POST /api/reports` is also supported.           |
+| `GET`    | `/api/reports`                   | Bearer         | List the caller's reports.                                                           |
+| `GET`    | `/api/reports/:id`               | Bearer         | Read an owned report and OCR results.                                                |
+| `DELETE` | `/api/reports/:id`               | Bearer         | Delete an owned report and its stored file.                                          |
+| `POST`   | `/api/mealplans/generate`        | Bearer         | Generate a meal plan from an owned, OCR-complete report.                             |
+| `GET`    | `/api/mealplans`                 | Bearer         | List the caller's meal plans.                                                        |
+| `GET`    | `/api/mealplans/:id`             | Bearer         | Read an owned meal plan.                                                             |
+| `PATCH`  | `/api/mealplans/:id/status`      | Bearer         | Set an owned plan to `active` or `completed`.                                        |
+| `POST`   | `/api/logs/add-food`             | Bearer         | Add an IFCT food portion to today's log.                                             |
+| `GET`    | `/api/logs/today`                | Bearer         | Read today's food entries, nutrient totals, and calorie target comparison.           |
+| `DELETE` | `/api/logs/:logId`               | Bearer         | Remove one owned food entry by its embedded entry ID.                                |
 
 `GET /api/calories/maintenance` requires `age`, `gender` (`male` or `female`), `weightKg`, `heightCm`, and `activityLevel` in the authenticated user's profile. `targetCalories` is the maintenance estimate (TDEE). Macro estimates use a 20% protein, 50% carbohydrate, and 30% fat energy split, converted using 4/4/9 kcal per gram.
 
